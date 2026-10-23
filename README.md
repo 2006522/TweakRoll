@@ -29,10 +29,10 @@
 
 **① 下载**
 
-[`鼠标手势 (TweakRoll)`](https://github.com/2006522/TweakRoll/releases/download/v1.3.0/TweakRoll.jar)
+[`鼠标手势 (TweakRoll) 1.3.0`](https://github.com/2006522/TweakRoll/releases/download/v1.3.0/TweakRoll-1.3.0.jar)
 
-> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll.jar`，
-> 下载页上显示的标题是「鼠标手势 (TweakRoll)」。
+> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.3.0.jar`，
+> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.3.0」。
 
 **② 前置**：Fabric Loader ≥ 0.19.5 ＋ Fabric API（26.4 版本线，如 `0.164.1+26.4`）＋ Java 25
 
