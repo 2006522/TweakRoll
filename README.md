@@ -89,15 +89,19 @@ shiftHoverMove=true   # Shift+左键扫过转移
 类加载时缓存一次（`slotClicked` 用 `Method.invoke` 走虚分派，
 所以创造模式背包的重写版本也生效）。
 
-### 为什么要逐帧轮询
+### 触发方式（两个坑）
 
-扫过转移没有用 Fabric 的拖拽事件，而是每帧在 `ScreenEvents.afterForeground` 里
-读物理按键状态（`InputConstants.isKeyDown` 判断 Shift、`MouseHandler.isLeftPressed()` 判断左键）
-和缩放后的鼠标坐标。
+**一、拖拽事件要靠 MouseHandler 层拦。** 原版 `AbstractContainerScreen.mouseDragged`
+在把格子加进 `quickCraftSlots` 之后会**直接 `return true`**，不会调到 `Screen.mouseDragged`。
+Fabric 的 `ScreenMouseEvents` 是在 `MouseHandler` 里用 `@WrapOperation` 拦 `screen.mouseDragged`
+调用点的，所以事件照样能收到 —— 模组就挂在这里（和 Mouse Tweaks 的做法一致），
+每个鼠标移动事件都会回调，扫过不漏格。另外用 20Hz 的客户端 tick 轮询兜底，两条路共用状态去重。
 
-原因：原版 `AbstractContainerScreen.mouseDragged` 在把格子加进 `quickCraftSlots` 之后
-会**直接 `return true`**，不会调用 `Screen.mouseDragged`，
-所以 Fabric 的 `ScreenMouseEvents.allowMouseDrag` 在容器界面里根本收不到。
+**二、按键要读 SDL 扫描码。** 26.x 起输入层从 GLFW 换成了 SDL，
+`InputConstants.isKeyDown(int)` 内部是 `SDLKeyboard.SDL_GetKeyboardState()` 拿数组后**用这个 int 直接当下标**，
+所以它要的是 **SDL 扫描码**：左 Shift = **225**、右 Shift = **229**、O = **18**。
+传 GLFW 的 340/344 会读越界、永远返回 false（这也是 1.3.0 及之前完全不触发的原因）。
+代码里统一用 `InputConstants.KEY_LSHIFT` 这类常量，不要再硬编码数字。
 
 ## 历史
 
@@ -105,6 +109,8 @@ shiftHoverMove=true   # Shift+左键扫过转移
 - v1.1.x：新增 Shift+左键扫过转移
 - v1.2.0：移除滚轮整理
 - v1.3.0：移除左键拖拽收集 / 右键拖拽放置，只保留 Shift+左键扫过转移
+- v1.3.1：修复 Shift 检测（GLFW 键码 → SDL 扫描码）
+- v1.3.2：补上拖拽事件触发路径（跟手），tick 轮询保留兜底
 
 ## 已知限制
 
