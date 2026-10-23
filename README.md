@@ -5,7 +5,7 @@
 给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组。只有一件事：把"按住 Shift 逐个点格子"
 换成"按住 Shift 扫过去"，扫过哪格就转哪格。
 
-![version](https://img.shields.io/badge/version-1.3.5-blue)
+![version](https://img.shields.io/badge/version-1.4.0-blue)
 ![minecraft](https://img.shields.io/badge/Minecraft-26.4--snapshot--5-3C8527)
 ![loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -25,14 +25,19 @@
 按下的第一格由原版处理，之后扫过的新格子由模组补上，所以不会重复转移。
 中途松开 Shift 立刻停止。扫过期间不会弹物品提示（tooltip），不会一格一格地闪名字。
 
+### R 键整理背包
+
+在背包界面按 `R`：合并同种物品堆叠 → 按物品 ID 排序 → 排满前面的格子。
+只动背包的 27 格，不碰快捷栏 / 盔甲 / 合成格。整理途中再按一次 `R` 取消。
+
 ## 下载安装
 
 **① 下载**
 
-[`鼠标手势 (TweakRoll) 1.3.5`](https://github.com/2006522/TweakRoll/releases/download/v1.3.5/TweakRoll-1.3.5.jar)
+[`鼠标手势 (TweakRoll) 1.4.0`](https://github.com/2006522/TweakRoll/releases/download/v1.4.0/TweakRoll-1.4.0.jar)
 
-> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.3.5.jar`，
-> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.3.5」。
+> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.4.0.jar`，
+> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.4.0」。
 
 **② 前置**：Fabric Loader ≥ 0.19.5 ＋ Fabric API（26.4 版本线，如 `0.164.1+26.4`）＋ Java 25
 
@@ -44,8 +49,9 @@
 
 | 按键 | 作用 |
 | --- | --- |
-| `O` | 打开设置界面（只有一项开关） |
+| `O` | 打开设置界面 |
 | `Shift + 左键按住` | 扫过转移 |
+| `R` | 一键整理背包（仅背包界面） |
 
 `O` 可以在原版「按键设置 → 物品栏」里改。
 
@@ -53,6 +59,7 @@
 
 ```properties
 shiftHoverMove=true   # Shift+左键扫过转移
+sortInventory=true    # R 键一键整理背包
 ```
 
 文件在 `config/tweakroll.properties`，游戏内按 `O` 也能开关。
@@ -153,3 +160,4 @@ git config core.hooksPath .githooks
 
 - 只处理标准容器界面；模组自定义槽位布局如果不用 `slot.x/slot.y`，会回退到原版 `hoveredSlot`。
 - 服务端会照常收到快速移动的点击包，所以多人游戏里同样有效（受服务器反作弊/延迟影响）。
+- 整理背包是模拟原版单击完成的（每秒 20 次），延迟很高的服务器上会看到物品一个个跳。

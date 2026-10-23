@@ -25,6 +25,9 @@ public final class ConfigScreen extends Screen {
         addToggle(x, 40, "tweakroll.option.shift_hover_move",
                 () -> config.shiftHoverMove,
                 value -> config.shiftHoverMove = value);
+        addToggle(x, 64, "tweakroll.option.sort_inventory",
+                () -> config.sortInventory,
+                value -> config.sortInventory = value);
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
                 .bounds(x, this.height - 32, 200, 20)

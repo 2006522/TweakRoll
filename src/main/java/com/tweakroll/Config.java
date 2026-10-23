@@ -13,6 +13,8 @@ import java.util.Properties;
 public final class Config {
     /** 按住 Shift + 左键扫过格子，自动快速转移（物品栏 ↔ 背包）。 */
     public boolean shiftHoverMove = true;
+    /** R 键一键整理背包（合并堆叠 + 按物品排序）。 */
+    public boolean sortInventory = true;
 
     private Path path() {
         return FabricLoader.getInstance().getConfigDir().resolve("tweakroll.properties");
@@ -31,11 +33,13 @@ public final class Config {
             return;
         }
         shiftHoverMove = readBoolean(properties, "shiftHoverMove", shiftHoverMove);
+        sortInventory = readBoolean(properties, "sortInventory", sortInventory);
     }
 
     public void save() {
         Properties properties = new Properties();
         properties.setProperty("shiftHoverMove", Boolean.toString(shiftHoverMove));
+        properties.setProperty("sortInventory", Boolean.toString(sortInventory));
         Path file = path();
         try {
             Files.createDirectories(file.getParent());
