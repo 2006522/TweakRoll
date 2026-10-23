@@ -7,6 +7,14 @@
 功能对标 [Mouse Tweaks](https://github.com/YaLTeR/MouseTweaks)（`MouseTweaks 2.31` / MC 26.3），
 但代码是重写的，未使用其源码。
 
+## 下载
+
+点直接下，不用登录、不用编译：
+
+**[⬇ mousegestures-1.0.1-mc26.4-snapshot-5.jar](https://github.com/2006522/TweakRoll/releases/download/v1.0.1/mousegestures-1.0.1-mc26.4-snapshot-5.jar)**
+
+历史版本见 [Releases](https://github.com/2006522/TweakRoll/releases)。
+
 ## 环境要求
 
 | 项目 | 版本 |
@@ -63,7 +71,9 @@ scaling=ALWAYS_ONE        # ALWAYS_ONE / PROPORTIONAL
 
 ## 安装
 
-把 `dist/tweakroll-1.0.1+mc26.4-snapshot-5.jar` 放进 `.minecraft/mods/`（需要 Fabric API）。
+1. 装好 Fabric Loader（>= 0.19.5）和 Fabric API（26.4 版本线，如 0.164.1+26.4）
+2. 从 [Releases](https://github.com/2006522/TweakRoll/releases) 下载 `mousegestures-<版本>.jar`
+3. 放进 `.minecraft/mods/`，启动游戏
 
 ## 构建
 
