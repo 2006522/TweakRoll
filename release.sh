@@ -38,11 +38,50 @@ echo "== 取 GitHub 凭据 =="
 TOKEN=$(printf "protocol=https\nhost=github.com\n\n" | git credential fill | sed -n 's/^password=//p')
 [ -n "$TOKEN" ] || { echo "拿不到 GitHub 凭据，先在 git 里登录一次" >&2; exit 1; }
 
+echo "== 生成发布说明 =="
+SHA=$(sha256sum "$JAR" | cut -d' ' -f1)
+if [ -f build/changes.md ]; then
+  # 可以提前把面向用户的说明写进 build/changes.md
+  CHANGES=$(cat build/changes.md)
+else
+  CHANGES=$(awk -v ver="## v$VER" 'index($0, ver) == 1 {f=1; next} f && /^## / {f=0} f' CHANGELOG.md)
+fi
+[ -n "$CHANGES" ] || CHANGES="- 见 CHANGELOG.md"
+mkdir -p build
+{
+  echo '按住 **Shift** + 按住**左键**，鼠标扫过哪个格子，那格物品就快速转移：'
+  echo
+  echo '- 物品栏（快捷栏）→ 背包'
+  echo '- 背包 → 物品栏（容器界面里则与容器互换）'
+  echo
+  echo '按下的第一格由原版处理，之后扫过的格子由模组补上，不会重复转移；中途松开 Shift 立刻停止。'
+  echo
+  echo '### 本版变更'
+  echo
+  printf '%s\n' "$CHANGES"
+  echo
+  echo '### 环境'
+  echo
+  echo '| Minecraft | Fabric Loader | Fabric API | Java |'
+  echo '| --- | --- | --- | --- |'
+  echo '| 26.4-snapshot-5 | ≥ 0.19.5 | 0.164.1+26.4 或更高 | 25 |'
+  echo
+  echo '### 安装'
+  echo
+  echo '1. 装好 Fabric Loader 和 Fabric API'
+  echo "2. 下载 \`$ASSET\` 放进 \`.minecraft/mods/\`"
+  echo
+  echo '### 校验'
+  echo
+  echo "SHA-256：\`$SHA\`"
+} > build/release-body.md
+BODY=$(sed ':a;N;$!ba;s/\\/\\\\/g;s/"/\\"/g;s/\n/\\n/g' build/release-body.md)
+
 echo "== 建 Release =="
 REL=$(curl -sS --ssl-no-revoke -X POST \
   -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
   -H "Content-Type: application/json; charset=utf-8" \
-  -d "{\"tag_name\":\"$TAG\",\"target_commitish\":\"main\",\"name\":\"$TITLE\",\"body\":\"鼠标手势 (TweakRoll) $VER\",\"draft\":false,\"prerelease\":false}" \
+  -d "{\"tag_name\":\"$TAG\",\"target_commitish\":\"main\",\"name\":\"$TITLE\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":false}" \
   "https://api.github.com/repos/$REPO/releases")
 REL_ID=$(printf '%s' "$REL" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
 [ -n "$REL_ID" ] || { echo "创建 Release 失败：$REL" >&2; exit 1; }
