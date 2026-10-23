@@ -98,6 +98,19 @@ shiftHoverMove=true   # Shift+左键扫过转移
 `deploy.sh` 会把其它版本的同 id jar 移出 `mods/`（挪到 `profiles/<实例>/_mods_backup/`），
 再把当前版本复制成 `mods/TweakRoll.jar`，避免重复 mod id。
 
+### 提交即部署
+
+仓库自带 `.githooks/pre-commit`：只要这次提交动了 `src/`，就会自动 `build.sh` + `deploy.sh`，
+也就是说**改完代码一提交，游戏里的 mod 就换好了**。
+
+新克隆的仓库要先启用一次：
+
+```bash
+git config core.hooksPath .githooks
+```
+
+（`release.sh` 里已经包含部署，所以发版时不用额外再跑。）
+
 ### 为什么不用 Gradle / Loom
 
 26.4-snapshot-5 这个快照：Mojang 没发 `client_mappings`，Fabric 也没发 Yarn，
