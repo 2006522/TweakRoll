@@ -21,12 +21,18 @@ final class InventoryTweaks {
     private static boolean sweepLogged;
     /** 诊断用的计数器，每秒最多打一条状态。 */
     private static int diagTicks;
+    /** 左键是否按住（由点击/释放事件维护）。 */
+    private static boolean leftHeld;
+    /** 拖拽路径是否已经打过日志。 */
+    private static boolean dragLogged;
 
     private InventoryTweaks() {
     }
 
     static void onScreenOpened(AbstractContainerScreen<?> screen) {
         resetSweep();
+        leftHeld = false;
+        dragLogged = false;
         Log.info("容器界面已接入: " + screen.getClass().getSimpleName());
     }
 
@@ -40,7 +46,7 @@ final class InventoryTweaks {
             resetSweep();
             return;
         }
-        boolean left = client.mouseHandler.isLeftPressed();
+        boolean left = leftHeld || client.mouseHandler.isLeftPressed();
         boolean shift = shiftDown();
         if (!left && !shift) {
             resetSweep();
@@ -66,18 +72,40 @@ final class InventoryTweaks {
 
     /**
      * Fabric 的拖拽事件（MouseHandler 层拦截，每个鼠标移动事件都会触发），跟手。
-     * 拿不到事件时上面的 tick 轮询兜底，两条路共用 {@link #lastSweepSlot} 去重。
+     * 拿不到事件时 tick 轮询兜底，两条路共用 {@link #lastSweepSlot} 去重。
+     *
+     * <p>注意：26.x 的鼠标按键是 SDL 编号（左=1/中=2/右=3），
+     * 必须用 {@code event.isLeftMouse()} 判断，不能用 {@code button() == 0}。</p>
      */
     static boolean onSweepDrag(Screen screen, MouseButtonEvent event, double mouseX, double mouseY) {
         if (!(screen instanceof AbstractContainerScreen<?> container)) {
             return true;
         }
-        if (event.button() != 0 || !TweakRoll.config().shiftHoverMove || !shiftDown()) {
+        if (!event.isLeftMouse() || !TweakRoll.config().shiftHoverMove || !shiftDown()) {
             return true;
+        }
+        if (!dragLogged) {
+            dragLogged = true;
+            Log.info("拖拽事件已接管（左键+Shift）");
         }
         sweepAt(container, slotAt(container, mouseX, mouseY));
         // Shift+左键拖拽在原版里没有任何行为，直接吃掉
         return false;
+    }
+
+    /** 记录左键是否按住：26.x 的 MouseHandler.isLeftPressed() 在界面里不一定准。 */
+    static boolean onMouseClick(Screen screen, MouseButtonEvent event) {
+        if (event.isLeftMouse()) {
+            leftHeld = true;
+        }
+        return true;
+    }
+
+    static boolean onMouseRelease(Screen screen, MouseButtonEvent event) {
+        if (event.isLeftMouse()) {
+            leftHeld = false;
+        }
+        return true;
     }
 
     /** 扫过转移的实际处理：同一格不重复触发，按下的第一格交给原版。 */

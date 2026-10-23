@@ -47,6 +47,9 @@ public final class TweakRoll implements ClientModInitializer {
                 InventoryTweaks.onScreenOpened(container);
                 // 拖拽事件（跟手），拿不到时靠下面的 tick 轮询兜底
                 ScreenMouseEvents.allowMouseDrag(screen).register(InventoryTweaks::onSweepDrag);
+                // 26.x 的 MouseHandler.isLeftPressed() 在界面里不一定可靠，自己记左键状态
+                ScreenMouseEvents.allowMouseClick(screen).register(InventoryTweaks::onMouseClick);
+                ScreenMouseEvents.allowMouseRelease(screen).register(InventoryTweaks::onMouseRelease);
             }
         });
 

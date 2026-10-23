@@ -1,5 +1,17 @@
 # 更新日志
 
+## v1.3.4
+
+修复左键判断——**这是"扫过完全没反应"的真正原因**。
+
+- 26.x 的鼠标按键是 **SDL 编号**：左=1、中=2、右=3（`MouseButtonInfo.isLeftMouse()` 的字节码就是
+  `button == 1`）。之前用 `event.button() == 0` 判断左键，**每一次左键拖拽都被当成"不是左键"**，
+  直接 return 了。
+- 改为用 `event.isLeftMouse()`。
+- 左键按住状态改为由 `allowMouseClick` / `allowMouseRelease` 事件自己维护
+  （`MouseHandler.isLeftPressed()` 在容器界面里实测返回 false，不可靠）。
+- 日志补充：拖拽路径首次接管时输出「拖拽事件已接管（左键+Shift）」。
+
 ## v1.3.3
 
 只加诊断，不改功能，用来定位"扫过没反应"到底卡在哪一步。
