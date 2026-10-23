@@ -23,7 +23,7 @@
 - 在箱子等**容器界面**里 → 容器 ↔ 玩家背包 互换
 
 按下的第一格由原版处理，之后扫过的新格子由模组补上，所以不会重复转移。
-中途松开 Shift 立刻停止。
+中途松开 Shift 立刻停止。扫过期间不会弹物品提示（tooltip），不会一格一格地闪名字。
 
 ## 下载安装
 
@@ -86,8 +86,9 @@ shiftHoverMove=true   # Shift+左键扫过转移
 ./release.sh
 ```
 
-它会自动：构建 → `git add/commit/push` → 建 Release（标题「鼠标手势 (TweakRoll) <版本>」）
-→ 上传 `TweakRoll-<版本>.jar` 并把附件显示名设为中文全名 → **把新 jar 部署到游戏 mods 目录**。
+它会自动：构建 → 同步 README/release 目录里的版本号 → `git add/commit/push`
+→ 建 Release（标题「鼠标手势 (TweakRoll) <版本>」）→ 上传 `TweakRoll-<版本>.jar`
+→ 把附件显示名设为中文全名 → **把新 jar 部署到游戏 mods 目录**。
 
 单纯想更新本地游戏里的版本（不发版）：
 
@@ -111,42 +112,42 @@ git config core.hooksPath .githooks
 
 （`release.sh` 里已经包含部署，所以发版时不用额外再跑。）
 
+## 实现要点
+
 ### 为什么不用 Gradle / Loom
 
 26.4-snapshot-5 这个快照：Mojang 没发 `client_mappings`，Fabric 也没发 Yarn，
 但**客户端 jar 本身没有混淆**（`net/minecraft/client/Minecraft.class` 直接可读）。
 所以直接对官方 jar 编译即可，产物命名空间就是 `official`，不需要 remap。
 
-也正因为如此，模组只有一个极小的 mixin（`ContainerScreenMixin`，用来在扫过期间屏蔽物品提示），
-其余受保护成员 —— `AbstractContainerScreen` 的 `leftPos` / `topPos` / `hoveredSlot` / `slotClicked`
+受保护成员 —— `AbstractContainerScreen` 的 `leftPos` / `topPos` / `hoveredSlot` / `slotClicked`
 —— 都用反射拿，类加载时缓存一次（`slotClicked` 用 `Method.invoke` 走虚分派，
 所以创造模式背包的重写版本也生效）。
 
-mixin 配置里 `defaultRequire` 是 `0`：万一哪天原版方法改名导致注入失败，
-模组也只是"tooltip 不再隐藏"，不会让游戏崩溃。
+### 唯一的一处 mixin
 
-### 触发方式（两个坑）
+`ContainerScreenMixin` 注入 `AbstractContainerScreen.extractTooltip` 的 HEAD，
+扫过期间直接 cancel，避免物品名一格一格地闪。平时悬停看物品名不受影响。
 
-**一、拖拽事件要靠 MouseHandler 层拦。** 原版 `AbstractContainerScreen.mouseDragged`
-在把格子加进 `quickCraftSlots` 之后会**直接 `return true`**，不会调到 `Screen.mouseDragged`。
-Fabric 的 `ScreenMouseEvents` 是在 `MouseHandler` 里用 `@WrapOperation` 拦 `screen.mouseDragged`
-调用点的，所以事件照样能收到 —— 模组就挂在这里（和 Mouse Tweaks 的做法一致），
-每个鼠标移动事件都会回调，扫过不漏格。另外用 20Hz 的客户端 tick 轮询兜底，两条路共用状态去重。
+配置里 `defaultRequire` 是 `0`：万一以后原版方法改名导致注入失败，
+模组只会退回"提示照旧显示"，不会让游戏崩溃。
 
-**二、按键要读 SDL 扫描码。** 26.x 起输入层从 GLFW 换成了 SDL，
-`InputConstants.isKeyDown(int)` 内部是 `SDLKeyboard.SDL_GetKeyboardState()` 拿数组后**用这个 int 直接当下标**，
-所以它要的是 **SDL 扫描码**：左 Shift = **225**、右 Shift = **229**、O = **18**。
-传 GLFW 的 340/344 会读越界、永远返回 false（这也是 1.3.0 及之前完全不触发的原因）。
-代码里统一用 `InputConstants.KEY_LSHIFT` 这类常量，不要再硬编码数字。
+### 三个必须知道的平台细节
 
-## 历史
+**一、拖拽事件要在 MouseHandler 层拦。**
+原版 `AbstractContainerScreen.mouseDragged` 在把格子加进 `quickCraftSlots` 之后会直接 `return true`，
+不会调到 `Screen.mouseDragged`。Fabric 的 `ScreenMouseEvents` 是在 `MouseHandler` 里用
+`@WrapOperation` 拦调用点的，所以事件照样收得到 —— 模组挂在这里，每个鼠标移动事件都回调。
+另外用 20Hz 的客户端 tick 轮询兜底，两条路共用状态去重。
 
-- v1.0.x：初始版本（滚轮整理 + 左键拖拽收集 + 右键拖拽放置）
-- v1.1.x：新增 Shift+左键扫过转移
-- v1.2.0：移除滚轮整理
-- v1.3.0：移除左键拖拽收集 / 右键拖拽放置，只保留 Shift+左键扫过转移
-- v1.3.1：修复 Shift 检测（GLFW 键码 → SDL 扫描码）
-- v1.3.2：补上拖拽事件触发路径（跟手），tick 轮询保留兜底
+**二、键盘要读 SDL 扫描码。**
+`InputConstants.isKeyDown(int)` 内部是 `SDLKeyboard.SDL_GetKeyboardState()` 拿数组后
+**用这个 int 直接当下标**，所以它要的是 **SDL 扫描码**：左 Shift = `225`、右 Shift = `229`、O = `18`。
+传 GLFW 的 `340/344` 会读越界、永远返回 false。代码里统一用 `InputConstants.KEY_*` 常量。
+
+**三、鼠标按键是 1 起编号。**
+`MouseButtonInfo.isLeftMouse()` 的判断是 `button == 1`（SDL 风格：左=1、中=2、右=3），
+所以不能写 `event.button() == 0`，要用 `event.isLeftMouse()`。
 
 ## 已知限制
 
