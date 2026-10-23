@@ -29,12 +29,11 @@ final class InventorySorter {
     private static final int BAG_LAST = 35;
     private static final int BAG_SIZE = BAG_LAST - BAG_FIRST + 1;
 
-    /** 每次点击间隔的 tick 数，太大拖慢、太小怕服务端跟不上。 */
-    private static final int CLICK_INTERVAL = 1;
+    /** 每个客户端 tick 发几次点击。4 次/秒×4 = 每秒 80 次，实测一次性发 4 个按键操作原版也能按序处理。 */
+    private static final int CLICKS_PER_TICK = 4;
 
     private static final Deque<Integer> QUEUE = new ArrayDeque<>();
     private static AbstractContainerScreen<?> target;
-    private static int cooldown;
 
     private InventorySorter() {
     }
@@ -87,7 +86,6 @@ final class InventorySorter {
         QUEUE.clear();
         QUEUE.addAll(clicks);
         target = screen;
-        cooldown = CLICK_INTERVAL;
         Log.info("开始整理背包，共 " + clicks.size() + " 次点击");
         return true;
     }
@@ -107,16 +105,24 @@ final class InventorySorter {
                     break;
                 }
                 int moved = Math.min(room, current[j].getCount());
-                // 拾起 j → 点到 i（并进去）→ 点回 j（把余数放回去）
-                addTriple(clicks, j, i, j);
-                current[i] = withCount(current[i], current[i].getCount() + moved);
                 int left = current[j].getCount() - moved;
+                current[i] = withCount(current[i], current[i].getCount() + moved);
                 current[j] = left <= 0 ? ItemStack.EMPTY : withCount(current[j], left);
+                // 拾起 j → 点到 i：源清空就不用再点回 j 了
+                clicks.add(BAG_FIRST + j);
+                clicks.add(BAG_FIRST + i);
+                if (left > 0) {
+                    clicks.add(BAG_FIRST + j);
+                }
             }
         }
     }
 
-    /** 选择排序：把想要的物品换到第 i 格。 */
+    /**
+     * 链式归位：一次「拾起」之后，把光标上的物品放进它该去的格子，
+     * 顺手拿起那格原有的物品继续找下一个位置，直到回到空出来的那个洞。
+     * 一个长度为 k 的环只需 k+1 次点击（旧做法要 3(k-1) 次）。
+     */
     private static void sortStacks(ItemStack[] current, List<Integer> clicks) {
         List<ItemStack> desired = new ArrayList<>();
         for (ItemStack stack : current) {
@@ -131,32 +137,44 @@ final class InventorySorter {
             desired.add(ItemStack.EMPTY);
         }
 
-        for (int i = 0; i < BAG_SIZE; i++) {
-            if (sameStack(current[i], desired.get(i))) {
+        for (int start = 0; start < BAG_SIZE; start++) {
+            if (sameStack(current[start], desired.get(start))) {
                 continue;
             }
-            int j = -1;
-            for (int k = i + 1; k < BAG_SIZE; k++) {
-                if (sameStack(current[k], desired.get(i))) {
-                    j = k;
+            int from = -1;
+            for (int k = 0; k < BAG_SIZE; k++) {
+                if (!sameStack(current[k], desired.get(k)) && sameStack(current[k], desired.get(start))) {
+                    from = k;
                     break;
                 }
             }
-            if (j < 0) {
+            if (from < 0) {
                 continue;
             }
-            // 拾起 j → 点到 i（换过来，原 i 的物品到了光标上）→ 点回 j（放好）
-            addTriple(clicks, j, i, j);
-            ItemStack tmp = current[i];
-            current[i] = current[j];
-            current[j] = tmp;
-        }
-    }
+            clicks.add(BAG_FIRST + from);
+            ItemStack carried = current[from];
+            current[from] = ItemStack.EMPTY;
 
-    private static void addTriple(List<Integer> clicks, int a, int b, int c) {
-        clicks.add(BAG_FIRST + a);
-        clicks.add(BAG_FIRST + b);
-        clicks.add(BAG_FIRST + c);
+            int guard = 0;
+            while (!carried.isEmpty() && guard++ <= BAG_SIZE) {
+                int to = -1;
+                for (int k = 0; k < BAG_SIZE; k++) {
+                    if (sameStack(desired.get(k), carried) && !sameStack(current[k], desired.get(k))) {
+                        to = k;
+                        break;
+                    }
+                }
+                if (to < 0) {
+                    clicks.add(BAG_FIRST + from);
+                    current[from] = carried;
+                    break;
+                }
+                clicks.add(BAG_FIRST + to);
+                ItemStack prev = current[to];
+                current[to] = carried;
+                carried = prev;
+            }
+        }
     }
 
     /** 每个客户端 tick 调一次，按节奏把队列里的点击发出去。 */
@@ -170,22 +188,16 @@ final class InventorySorter {
             target = null;
             return;
         }
-        if (cooldown-- > 0) {
-            return;
+        for (int i = 0; i < CLICKS_PER_TICK && !QUEUE.isEmpty(); i++) {
+            Integer index = QUEUE.poll();
+            if (index == null) {
+                break;
+            }
+            Slot slot = index < target.getMenu().slots.size() ? target.getMenu().slots.get(index) : null;
+            if (slot != null) {
+                ScreenBridge.click(target, slot, 0);
+            }
         }
-        cooldown = CLICK_INTERVAL;
-
-        Integer index = QUEUE.poll();
-        if (index == null) {
-            target = null;
-            Log.info("背包整理完成");
-            return;
-        }
-        Slot slot = index < target.getMenu().slots.size() ? target.getMenu().slots.get(index) : null;
-        if (slot == null) {
-            return;
-        }
-        ScreenBridge.click(target, slot, 0);
         if (QUEUE.isEmpty()) {
             target = null;
             Log.info("背包整理完成");
