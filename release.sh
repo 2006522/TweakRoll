@@ -77,7 +77,14 @@ mkdir -p build
 } > build/release-body.md
 BODY=$(sed ':a;N;$!ba;s/\\/\\\\/g;s/"/\\"/g;s/\n/\\n/g' build/release-body.md)
 
-echo "== 建 Release =="
+echo "== 建 Release（已存在则复用）=="
+EXIST=$(curl -sS --ssl-no-revoke -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/$REPO/releases/tags/$TAG")
+EXIST_ID=$(printf '%s' "$EXIST" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
+if [ -n "$EXIST_ID" ] && ! printf '%s' "$EXIST" | grep -q 'Not Found'; then
+  REL_ID="$EXIST_ID"
+  echo "该版本已有 Release，直接复用 id=$REL_ID"
+else
 REL=$(curl -sS --ssl-no-revoke -X POST \
   -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
   -H "Content-Type: application/json; charset=utf-8" \
@@ -86,22 +93,34 @@ REL=$(curl -sS --ssl-no-revoke -X POST \
 REL_ID=$(printf '%s' "$REL" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
 [ -n "$REL_ID" ] || { echo "创建 Release 失败：$REL" >&2; exit 1; }
 echo "release id = $REL_ID"
+fi
 
 echo "== 上传 jar =="
+HAVE=$(curl -sS --ssl-no-revoke -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/$REPO/releases/$REL_ID/assets" | grep -o "\"name\": *\"$ASSET\"" | head -1)
+if [ -n "$HAVE" ]; then
+  echo "附件 $ASSET 已存在，跳过上传"
+  UPLOADED=""
+else
 UPLOADED=$(curl -sS --ssl-no-revoke -X POST \
   -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
   -H "Content-Type: application/java-archive" \
   --data-binary @"$JAR" \
   "https://uploads.github.com/repos/$REPO/releases/$REL_ID/assets?name=$ASSET")
-ASSET_ID=$(printf '%s' "$UPLOADED" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
-[ -n "$ASSET_ID" ] || { echo "上传失败：$UPLOADED" >&2; exit 1; }
+if [ -n "$UPLOADED" ]; then
+  ASSET_ID=$(printf '%s' "$UPLOADED" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
+  [ -n "$ASSET_ID" ] || { echo "上传失败：$UPLOADED" >&2; exit 1; }
+fi
+fi
 
+if [ -n "${ASSET_ID:-}" ]; then
 echo "== 设置中文显示名 =="
 curl -sS --ssl-no-revoke -X PATCH \
   -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
   -H "Content-Type: application/json; charset=utf-8" \
   -d "{\"label\":\"$TITLE\"}" \
   "https://api.github.com/repos/$REPO/releases/assets/$ASSET_ID" > /dev/null
+fi
 
 echo
 echo "== 部署到游戏 mods =="
