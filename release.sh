@@ -37,7 +37,7 @@ REL=$(curl -sS --ssl-no-revoke -X POST \
   -H "Content-Type: application/json; charset=utf-8" \
   -d "{\"tag_name\":\"$TAG\",\"target_commitish\":\"main\",\"name\":\"$TITLE\",\"body\":\"鼠标手势 (TweakRoll) $VER\",\"draft\":false,\"prerelease\":false}" \
   "https://api.github.com/repos/$REPO/releases")
-REL_ID=$(printf '%s' "$REL" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+REL_ID=$(printf '%s' "$REL" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
 [ -n "$REL_ID" ] || { echo "创建 Release 失败：$REL" >&2; exit 1; }
 echo "release id = $REL_ID"
 
@@ -47,7 +47,7 @@ UPLOADED=$(curl -sS --ssl-no-revoke -X POST \
   -H "Content-Type: application/java-archive" \
   --data-binary @"$JAR" \
   "https://uploads.github.com/repos/$REPO/releases/$REL_ID/assets?name=$ASSET")
-ASSET_ID=$(printf '%s' "$UPLOADED" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+ASSET_ID=$(printf '%s' "$UPLOADED" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
 [ -n "$ASSET_ID" ] || { echo "上传失败：$UPLOADED" >&2; exit 1; }
 
 echo "== 设置中文显示名 =="
