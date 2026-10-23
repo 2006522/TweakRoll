@@ -11,7 +11,7 @@
 
 点直接下，不用登录、不用编译：
 
-**[⬇ mousegestures-1.1.0-mc26.4-snapshot-5.jar](https://github.com/2006522/TweakRoll/releases/download/v1.1.0/mousegestures-1.1.0-mc26.4-snapshot-5.jar)**
+**[⬇ mousegestures-1.1.1-mc26.4-snapshot-5.jar](https://github.com/2006522/TweakRoll/releases/download/v1.1.1/mousegestures-1.1.1-mc26.4-snapshot-5.jar)**
 
 历史版本见 [Releases](https://github.com/2006522/TweakRoll/releases)。
 

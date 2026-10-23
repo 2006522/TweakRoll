@@ -57,6 +57,13 @@ public final class TweakRoll implements ClientModInitializer {
             ScreenMouseEvents.allowMouseDrag(screen).register(InventoryTweaks::onDrag);
             ScreenMouseEvents.allowMouseRelease(screen).register(InventoryTweaks::onRelease);
             ScreenMouseEvents.allowMouseScroll(screen).register(InventoryTweaks::onScroll);
+            // Shift+左键扫过转移必须逐帧轮询：原版容器界面的 mouseDragged 会提前 return，
+            // 拖拽事件到不了我们的处理器
+            ScreenEvents.afterForeground(screen).register((s, extractor) -> {
+                if (s instanceof AbstractContainerScreen<?> containerScreen) {
+                    InventoryTweaks.tickSweep(containerScreen);
+                }
+            });
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

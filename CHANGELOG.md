@@ -1,5 +1,18 @@
 # 更新日志
 
+## v1.1.1
+
+修复 Shift + 左键扫过转移在游戏里不生效的问题。
+
+- 原因：原版 `AbstractContainerScreen.mouseDragged` 在把格子加进 `quickCraftSlots` 之后会
+  直接 `return true`，不会走到 `Screen.mouseDragged`，所以 Fabric 的
+  `ScreenMouseEvents.allowMouseDrag` 事件在容器界面里根本收不到；
+  同时 `MouseButtonEvent.hasShiftDown()` 在这里也不可靠。
+- 改为**逐帧轮询**（`ScreenEvents.afterForeground`）：直接读物理按键状态
+  （`InputConstants.isKeyDown` 判断 Shift、`MouseHandler.isLeftPressed()` 判断左键）
+  和缩放后的鼠标坐标，扫到新格子就补一次 `ContainerInput.QUICK_MOVE`。
+  按下的第一格仍交给原版处理，不会重复转移。
+
 ## v1.1.0
 
 - 新增 **Shift + 左键扫过转移**：按住 Shift 再按住左键，鼠标扫过哪个格子，

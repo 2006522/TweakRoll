@@ -1,6 +1,7 @@
 package com.tweakroll;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -26,8 +27,7 @@ final class InventoryTweaks {
     private enum Mode {
         NONE,
         COLLECT,
-        PLACE,
-        QUICK_MOVE
+        PLACE
     }
 
     private static final Map<Screen, Boolean> WHEEL_DISABLED = new WeakHashMap<>();
@@ -36,6 +36,11 @@ final class InventoryTweaks {
     private static Slot lastDragSlot;
     private static int dragButton = -1;
     private static Mode mode = Mode.NONE;
+
+    // Shift+左键扫过转移的逐帧状态
+    private static boolean sweepLeftHeld;
+    private static Slot lastSweepSlot;
+    private static boolean sweepLogged;
 
     private InventoryTweaks() {
     }
@@ -94,13 +99,10 @@ final class InventoryTweaks {
         Slot slot = slotAt(container, event.x(), event.y());
         ItemStack carried = container.getMenu().getCarried();
 
-        // Shift + 按住左键扫过格子：每扫到一个格子就快速转移（物品栏 ↔ 背包）
-        if (button == 0 && config.shiftHoverMove && event.hasShiftDown()) {
-            dragScreen = container;
-            dragButton = 0;
-            mode = Mode.QUICK_MOVE;
-            lastDragSlot = slot;
-            // 首次点击交给原版处理（原版 Shift+左键本来就是快速移动）
+        // Shift + 左键完全交给逐帧轮询处理：
+        // 原版 AbstractContainerScreen.mouseDragged 在加入快捷合成格子后会提前 return，
+        // 拖拽事件根本到不了这里，所以不能依赖事件。
+        if (button == 0 && shiftDown()) {
             return true;
         }
 
@@ -128,11 +130,6 @@ final class InventoryTweaks {
         if (mode == Mode.NONE || dragScreen != screen || event.button() != dragButton) {
             return true;
         }
-        // 中途松开 Shift 就退出扫过模式，避免误操作
-        if (mode == Mode.QUICK_MOVE && !shiftDown()) {
-            resetDrag();
-            return true;
-        }
         if (!(screen instanceof AbstractContainerScreen<?> container)) {
             return true;
         }
@@ -143,10 +140,8 @@ final class InventoryTweaks {
         lastDragSlot = slot;
         if (mode == Mode.COLLECT) {
             collectInto(container, slot);
-        } else if (mode == Mode.PLACE) {
-            placeOne(container, slot);
         } else {
-            quickMove(container, slot);
+            placeOne(container, slot);
         }
         // 接管拖拽，避免原版快速合成逻辑同时生效
         return false;
@@ -159,7 +154,57 @@ final class InventoryTweaks {
 
     static void onScreenOpened(AbstractContainerScreen<?> screen) {
         resetDrag();
+        resetSweep();
         WHEEL_DISABLED.remove(screen);
+    }
+
+    /**
+     * 每帧调用（ScreenEvents.afterForeground）。
+     *
+     * <p>Shift + 左键按住时，鼠标扫过的每个新格子都补一次原版快速移动。
+     * 之所以不用拖拽事件：原版 {@code AbstractContainerScreen.mouseDragged} 在把格子加进
+     * quickCraftSlots 后会直接 return true，根本走不到 {@code Screen.mouseDragged}，
+     * Fabric 的 allowMouseDrag 事件因此收不到。</p>
+     */
+    static void tickSweep(AbstractContainerScreen<?> screen) {
+        Config config = TweakRoll.config();
+        if (!config.shiftHoverMove || !ScreenBridge.isReady()) {
+            resetSweep();
+            return;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.mouseHandler == null || client.getWindow() == null) {
+            resetSweep();
+            return;
+        }
+        if (!client.mouseHandler.isLeftPressed() || !shiftDown()) {
+            resetSweep();
+            return;
+        }
+        double mouseX = client.mouseHandler.getScaledXPos(client.getWindow());
+        double mouseY = client.mouseHandler.getScaledYPos(client.getWindow());
+        Slot slot = slotAt(screen, mouseX, mouseY);
+        if (!sweepLeftHeld) {
+            // 按下的第一格已经由原版处理过了，这里只记录、不重复触发
+            sweepLeftHeld = true;
+            lastSweepSlot = slot;
+            return;
+        }
+        if (slot == null || slot == lastSweepSlot) {
+            return;
+        }
+        lastSweepSlot = slot;
+        if (!sweepLogged) {
+            sweepLogged = true;
+            Log.info("Shift 扫过转移已触发（槽位 " + slot.index + "）");
+        }
+        quickMove(screen, slot);
+    }
+
+    private static void resetSweep() {
+        sweepLeftHeld = false;
+        lastSweepSlot = null;
+        sweepLogged = false;
     }
 
     static void toggleWheel(Screen screen) {
