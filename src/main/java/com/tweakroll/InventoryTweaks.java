@@ -27,10 +27,12 @@ final class InventoryTweaks {
 
     static void onScreenOpened(AbstractContainerScreen<?> screen) {
         resetSweep();
+        Log.info("容器界面已接入: " + screen.getClass().getSimpleName());
     }
 
     /**
      * 客户端 tick 调用（20 次/秒），作为兜底。
+     * 只要容器界面开着、且按住了 Shift 或左键其一，就每秒打一条状态，方便定位问题。
      */
     static void tickSweep(AbstractContainerScreen<?> screen) {
         Minecraft client = Minecraft.getInstance();
@@ -38,12 +40,28 @@ final class InventoryTweaks {
             resetSweep();
             return;
         }
-        if (!client.mouseHandler.isLeftPressed() || !shiftDown()) {
+        boolean left = client.mouseHandler.isLeftPressed();
+        boolean shift = shiftDown();
+        if (!left && !shift) {
             resetSweep();
             return;
         }
-        sweepAt(screen, client.mouseHandler.getScaledXPos(client.getWindow()),
-                client.mouseHandler.getScaledYPos(client.getWindow()));
+        double mouseX = client.mouseHandler.getScaledXPos(client.getWindow());
+        double mouseY = client.mouseHandler.getScaledYPos(client.getWindow());
+        Slot slot = slotAt(screen, mouseX, mouseY);
+        if (++diagTicks >= 20) {
+            diagTicks = 0;
+            Log.info("诊断: shift=" + shift + " left=" + left
+                    + " slot=" + (slot == null ? "null" : String.valueOf(slot.index))
+                    + " 界面=" + screen.getClass().getSimpleName()
+                    + " 坐标=" + Math.round(mouseX) + "," + Math.round(mouseY));
+        }
+        if (!left || !shift) {
+            sweepLeftHeld = false;
+            lastSweepSlot = null;
+            return;
+        }
+        sweepAt(screen, slot);
     }
 
     /**
@@ -57,23 +75,16 @@ final class InventoryTweaks {
         if (event.button() != 0 || !TweakRoll.config().shiftHoverMove || !shiftDown()) {
             return true;
         }
-        sweepAt(container, mouseX, mouseY);
+        sweepAt(container, slotAt(container, mouseX, mouseY));
         // Shift+左键拖拽在原版里没有任何行为，直接吃掉
         return false;
     }
 
     /** 扫过转移的实际处理：同一格不重复触发，按下的第一格交给原版。 */
-    private static void sweepAt(AbstractContainerScreen<?> screen, double mouseX, double mouseY) {
+    private static void sweepAt(AbstractContainerScreen<?> screen, Slot slot) {
         if (!TweakRoll.config().shiftHoverMove || !ScreenBridge.isReady()) {
             resetSweep();
             return;
-        }
-        Slot slot = slotAt(screen, mouseX, mouseY);
-        if (++diagTicks >= 20) {
-            diagTicks = 0;
-            Log.info("诊断: shift=true left=true slot=" + (slot == null ? "null" : slot.index)
-                    + " 界面=" + screen.getClass().getSimpleName()
-                    + " 坐标=" + Math.round(mouseX) + "," + Math.round(mouseY));
         }
         if (!sweepLeftHeld) {
             // 按下的第一格已经由原版处理过了，这里只记录、不重复触发
