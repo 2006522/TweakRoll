@@ -78,6 +78,17 @@ shiftHoverMove=true   # Shift+左键扫过转移
 > 脚本里 `javac` 收到的是绝对路径；仓库放在含中文的目录下时，
 > Windows 可能因参数编码报「找不到文件」，换纯英文路径即可。
 
+### 发版
+
+改完 `fabric.mod.json` 里的 `version` 后执行：
+
+```bash
+./release.sh
+```
+
+它会自动：构建 → `git add/commit/push` → 建 Release（标题「鼠标手势 (TweakRoll) <版本>」）
+→ 上传 `TweakRoll-<版本>.jar` 并把附件显示名设为中文全名。
+
 ### 为什么不用 Gradle / Loom
 
 26.4-snapshot-5 这个快照：Mojang 没发 `client_mappings`，Fabric 也没发 Yarn，
