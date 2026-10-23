@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 MODS="${MODS:-E:/Axolotl.Launcher/profiles/26.4-snapshot-5-Fabric 0.19.5/mods}"
 VER=$(grep -o '"version": "[^"]*"' src/main/resources/fabric.mod.json | head -1 | sed 's/.*: "//;s/"//')
 JAR="dist/tweakroll-$VER+mc26.4-snapshot-5.jar"
-TARGET="$MODS/TweakRoll.jar"
+TARGET="$MODS/TweakRoll-$VER.jar"
 BACKUP="$(dirname "$MODS")/_mods_backup"
 
 [ -d "$MODS" ] || { echo "mods 目录不存在: $MODS" >&2; exit 1; }

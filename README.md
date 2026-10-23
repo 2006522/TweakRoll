@@ -96,7 +96,7 @@ shiftHoverMove=true   # Shift+左键扫过转移
 ```
 
 `deploy.sh` 会把其它版本的同 id jar 移出 `mods/`（挪到 `profiles/<实例>/_mods_backup/`），
-再把当前版本复制成 `mods/TweakRoll.jar`，避免重复 mod id。
+再把当前版本复制成 `mods/TweakRoll-<版本>.jar`，避免重复 mod id。
 
 ### 提交即部署
 
