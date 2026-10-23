@@ -18,6 +18,12 @@ echo "== 构建 =="
 bash build.sh
 [ -f "$JAR" ] || { echo "构建产物不存在: $JAR" >&2; exit 1; }
 
+echo "== 同步 README 与 release/ 里的版本号 =="
+sed -i -E "s|version-[0-9]+\.[0-9]+\.[0-9]+-blue|version-$VER-blue|g; s|releases/download/v[0-9.]+/TweakRoll-[0-9.]+\.jar|releases/download/$TAG/TweakRoll-$VER.jar|g; s|鼠标手势 \(TweakRoll\) [0-9]+\.[0-9]+\.[0-9]+|鼠标手势 (TweakRoll) $VER|g; s|TweakRoll-[0-9]+\.[0-9]+\.[0-9]+\.jar|TweakRoll-$VER.jar|g" README.md
+mkdir -p release
+find release -maxdepth 1 -name '*.jar' ! -name "*$VER*" -delete
+cp -f "dist/tweakroll-$VER+mc26.4-snapshot-5.jar" "release/鼠标手势 (TweakRoll) $VER.jar"
+
 echo "== 提交并推送 =="
 export SKIP_HOOK_DEPLOY=1
 git add -A
