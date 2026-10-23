@@ -1,5 +1,11 @@
 # 更新日志
 
+## v1.0.1
+
+- 模组显示名改为「鼠标手势」（`fabric.mod.json` 的 `name`、设置界面标题、按键名称同步更新）。
+  内部 mod id 仍为 `tweakroll`，配置路径 `config/tweakroll.properties` 不变。
+- 作者改为 `2006522`。
+
 ## v1.0.0
 
 首个版本，目标版本 Minecraft 26.4-snapshot-5 / Fabric Loader 0.19.5+ / Java 25。

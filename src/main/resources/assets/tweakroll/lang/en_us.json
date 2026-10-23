@@ -1,7 +1,7 @@
 {
-  "key.tweakroll.config": "TweakRoll Settings",
+  "key.tweakroll.config": "Mouse Gestures Settings",
   "key.tweakroll.toggle_wheel": "Toggle wheel tweak here",
-  "tweakroll.config.title": "TweakRoll",
+  "tweakroll.config.title": "Mouse Gestures",
   "tweakroll.option.wheel": "Wheel tweak",
   "tweakroll.option.lmb_collect": "Left-drag collect",
   "tweakroll.option.rmb_place": "Right-drag place one",

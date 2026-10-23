@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "tweakroll",
-  "version": "1.0.0",
-  "name": "TweakRoll",
-  "description": "滚轮整理背包、左键拖拽收集、右键拖拽放置。Minecraft 26.4-snapshot-5 / Fabric。",
+  "version": "1.0.1",
+  "name": "鼠标手势",
+  "description": "鼠标手势整理背包：滚轮逐个搬运、左键拖拽收集、右键拖拽放置。Minecraft 26.4-snapshot-5 / Fabric。",
   "authors": [
-    "TweakRoll"
+    "2006522"
   ],
   "license": "MIT",
   "environment": "client",
