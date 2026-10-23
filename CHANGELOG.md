@@ -1,5 +1,18 @@
 # 更新日志
 
+## v1.3.1
+
+修复 Shift + 左键扫过转移**完全不触发**。
+
+- **根因**：26.x 起输入走 SDL，`InputConstants.isKeyDown(int)` 收的是 **SDL 扫描码**，
+  不是 GLFW 键码。之前传的是 `340`/`344`（GLFW 的左右 Shift），
+  在 SDL 键盘状态数组里读的是越界位置，永远 false —— 所以一直判定"没按 Shift"。
+- 改用 `InputConstants.KEY_LSHIFT`（225）/ `KEY_RSHIFT`（229）。
+- 顺带修正 `O` 键：原来用 `79`（GLFW），现在用 `InputConstants.KEY_O`（SDL 扫描码 18）。
+- 轮询从逐帧渲染事件改为 `ClientTickEvents.END_CLIENT_TICK`（20 次/秒），
+  不再依赖可能不派发的 `ScreenEvents.afterForeground`。
+- 加了每秒一次的诊断日志（按住 Shift+左键时输出悬停槽位/坐标），方便后续排查。
+
 ## v1.3.0
 
 - **只保留 Shift + 左键扫过转移**，删掉「左键拖拽收集」和「右键拖拽放置」：

@@ -11,15 +11,14 @@ import net.minecraft.world.inventory.Slot;
  * 唯一的功能：Shift + 左键按住，鼠标扫过哪个格子，那格物品就快速转移。
  */
 final class InventoryTweaks {
-    private static final int GLFW_KEY_LEFT_SHIFT = 340;
-    private static final int GLFW_KEY_RIGHT_SHIFT = 344;
-
     /** 本次按住期间是否已经记录过起始格（起始格由原版处理）。 */
     private static boolean sweepLeftHeld;
     /** 上一次触发过的格子，避免同一格重复转移。 */
     private static Slot lastSweepSlot;
     /** 每次按住只打一次日志，方便排查。 */
     private static boolean sweepLogged;
+    /** 诊断用的计数器，每秒最多打一条状态。 */
+    private static int diagTicks;
 
     private InventoryTweaks() {
     }
@@ -53,6 +52,12 @@ final class InventoryTweaks {
         double mouseX = client.mouseHandler.getScaledXPos(client.getWindow());
         double mouseY = client.mouseHandler.getScaledYPos(client.getWindow());
         Slot slot = slotAt(screen, mouseX, mouseY);
+        if (++diagTicks >= 20) {
+            diagTicks = 0;
+            Log.info("诊断: shift=true left=true slot=" + (slot == null ? "null" : slot.index)
+                    + " 界面=" + screen.getClass().getSimpleName()
+                    + " 坐标=" + Math.round(mouseX) + "," + Math.round(mouseY));
+        }
         if (!sweepLeftHeld) {
             // 按下的第一格已经由原版处理过了，这里只记录、不重复触发
             sweepLeftHeld = true;
@@ -74,6 +79,7 @@ final class InventoryTweaks {
         sweepLeftHeld = false;
         lastSweepSlot = null;
         sweepLogged = false;
+        diagTicks = 0;
     }
 
     /** 走原版 Shift+左键 的快速移动：物品栏 → 背包，背包 → 物品栏（容器界面则与容器互换）。 */
@@ -90,8 +96,10 @@ final class InventoryTweaks {
     }
 
     private static boolean shiftDown() {
-        return InputConstants.isKeyDown(GLFW_KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(GLFW_KEY_RIGHT_SHIFT);
+        // 注意：26.x 起输入走 SDL，InputConstants.isKeyDown 收的是 SDL 扫描码
+        // （KEY_LSHIFT=225 / KEY_RSHIFT=229），不是 GLFW 的 340/344
+        return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
     }
 
     private static Slot slotAt(AbstractContainerScreen<?> screen, double mouseX, double mouseY) {

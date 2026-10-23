@@ -16,8 +16,6 @@ import java.util.WeakHashMap;
 public final class TweakRoll implements ClientModInitializer {
     public static final String MOD_ID = "tweakroll";
 
-    private static final int KEY_O = 79;
-
     private static TweakRoll instance;
 
     private final Config config = new Config();
@@ -41,25 +39,22 @@ public final class TweakRoll implements ClientModInitializer {
         config.save();
 
         configKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.tweakroll.config", InputConstants.Type.KEYBOARD, KEY_O, KeyMapping.Category.INVENTORY));
+                "key.tweakroll.config", InputConstants.Type.KEYBOARD, InputConstants.KEY_O, KeyMapping.Category.INVENTORY));
 
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (!(screen instanceof AbstractContainerScreen<?> container) || !wiredScreens.add(screen)) {
-                return;
+            if (screen instanceof AbstractContainerScreen<?> container && wiredScreens.add(screen)) {
+                InventoryTweaks.onScreenOpened(container);
             }
-            InventoryTweaks.onScreenOpened(container);
-            // Shift+左键扫过转移必须逐帧轮询：原版容器界面的 mouseDragged 会提前 return，
-            // 拖拽事件到不了我们的处理器
-            ScreenEvents.afterForeground(screen).register((s, extractor) -> {
-                if (s instanceof AbstractContainerScreen<?> containerScreen) {
-                    InventoryTweaks.tickSweep(containerScreen);
-                }
-            });
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (configKey.consumeClick()) {
                 client.setScreenAndShow(new ConfigScreen(client.gui.screen()));
+            }
+            // 扫过转移用客户端 tick 轮询（20 次/秒）：
+            // Fabric 的拖拽事件在容器界面里不可靠，逐帧事件也不保证一定会派发
+            if (client.gui.screen() instanceof AbstractContainerScreen<?> container) {
+                InventoryTweaks.tickSweep(container);
             }
         });
 
