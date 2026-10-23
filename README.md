@@ -2,8 +2,7 @@
 
 **按住 Shift 用左键扫一排，物品栏和背包就换好了。**
 
-给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组。只有一件事：把"按住 Shift 逐个点格子"
-换成"按住 Shift 扫过去"，扫过哪格就转哪格。
+给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组。
 
 ![version](https://img.shields.io/badge/version-1.4.0-blue)
 ![minecraft](https://img.shields.io/badge/Minecraft-26.4--snapshot--5-3C8527)
