@@ -8,7 +8,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -37,8 +36,6 @@ final class InventorySorter {
 
     private static final Deque<Integer> QUEUE = new ArrayDeque<>();
     private static AbstractContainerScreen<?> target;
-    /** 服务端改完后，等几个 tick 再让客户端读一遍，用来判断同步是否到位。 */
-    private static int awaitClientCheck;
 
     private InventorySorter() {
     }
@@ -113,9 +110,7 @@ final class InventorySorter {
             menu.broadcastChanges();
             // 客户端偶尔收不到增量同步，补一次全量
             menu.broadcastFullState();
-            Log.info("服务端整理完成：改动 " + changed + " 格，结果 "
-                    + preview(menu) + "（等待客户端确认）");
-            awaitClientCheck = 5;
+            Log.info("整理完成：改动 " + changed + " 格");
         });
         return true;
     }
@@ -280,15 +275,6 @@ final class InventorySorter {
 
     /** 每个客户端 tick 调一次，按节奏把队列里的点击发出去。 */
     static void tick(Minecraft client) {
-        if (awaitClientCheck > 0) {
-            awaitClientCheck--;
-            if (awaitClientCheck == 0) {
-                if (client.gui.screen() instanceof AbstractContainerScreen<?> container
-                        && container.getMenu() instanceof InventoryMenu menu) {
-                    Log.info("客户端确认：看到 " + preview(menu) + "（与服务端一致则是同步成功）");
-                }
-            }
-        }
         if (QUEUE.isEmpty()) {
             target = null;
             return;
@@ -322,18 +308,6 @@ final class InventorySorter {
         ItemStack copy = stack.copy();
         copy.setCount(count);
         return copy;
-    }
-
-    private static String preview(AbstractContainerMenu menu) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < 5; i++) {
-            ItemStack stack = menu.slots.get(BAG_FIRST + i).getItem();
-            if (i > 0) {
-                sb.append(", ");
-            }
-            sb.append(stack.isEmpty() ? "-" : stack.getItem().getDescriptionId().replace("item.minecraft.", "") + "x" + stack.getCount());
-        }
-        return sb.append(']').toString();
     }
 
     private static boolean sameStack(ItemStack a, ItemStack b) {
