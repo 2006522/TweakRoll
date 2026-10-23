@@ -87,7 +87,16 @@ shiftHoverMove=true   # Shift+左键扫过转移
 ```
 
 它会自动：构建 → `git add/commit/push` → 建 Release（标题「鼠标手势 (TweakRoll) <版本>」）
-→ 上传 `TweakRoll-<版本>.jar` 并把附件显示名设为中文全名。
+→ 上传 `TweakRoll-<版本>.jar` 并把附件显示名设为中文全名 → **把新 jar 部署到游戏 mods 目录**。
+
+单纯想更新本地游戏里的版本（不发版）：
+
+```bash
+./build.sh && ./deploy.sh
+```
+
+`deploy.sh` 会把其它版本的同 id jar 移出 `mods/`（挪到 `profiles/<实例>/_mods_backup/`），
+再把当前版本复制成 `mods/TweakRoll.jar`，避免重复 mod id。
 
 ### 为什么不用 Gradle / Loom
 

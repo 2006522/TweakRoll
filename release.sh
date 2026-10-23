@@ -58,5 +58,9 @@ curl -sS --ssl-no-revoke -X PATCH \
   "https://api.github.com/repos/$REPO/releases/assets/$ASSET_ID" > /dev/null
 
 echo
+echo "== 部署到游戏 mods =="
+bash deploy.sh
+
+echo
 echo "完成：https://github.com/$REPO/releases/tag/$TAG"
 echo "直链：https://github.com/$REPO/releases/download/$TAG/$ASSET"
