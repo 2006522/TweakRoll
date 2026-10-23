@@ -11,10 +11,6 @@ import java.util.Properties;
 
 /** 简单的 properties 配置，文件名 config/tweakroll.properties。 */
 public final class Config {
-    /** 左键按住拖拽，把经过的同种物品收集到光标上。 */
-    public boolean lmbCollect = true;
-    /** 右键按住拖拽，往经过的格子各放一个。 */
-    public boolean rmbPlace = true;
     /** 按住 Shift + 左键扫过格子，自动快速转移（物品栏 ↔ 背包）。 */
     public boolean shiftHoverMove = true;
 
@@ -34,15 +30,11 @@ public final class Config {
             Log.error("读取配置失败", exception);
             return;
         }
-        lmbCollect = readBoolean(properties, "lmbCollect", lmbCollect);
-        rmbPlace = readBoolean(properties, "rmbPlace", rmbPlace);
         shiftHoverMove = readBoolean(properties, "shiftHoverMove", shiftHoverMove);
     }
 
     public void save() {
         Properties properties = new Properties();
-        properties.setProperty("lmbCollect", Boolean.toString(lmbCollect));
-        properties.setProperty("rmbPlace", Boolean.toString(rmbPlace));
         properties.setProperty("shiftHoverMove", Boolean.toString(shiftHoverMove));
         Path file = path();
         try {

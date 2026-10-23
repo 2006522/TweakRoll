@@ -21,17 +21,10 @@ public final class ConfigScreen extends Screen {
     protected void init() {
         Config config = TweakRoll.config();
         int x = this.width / 2 - 100;
-        int y = 40;
 
-        y = addToggle(x, y, "tweakroll.option.shift_hover_move",
+        addToggle(x, 40, "tweakroll.option.shift_hover_move",
                 () -> config.shiftHoverMove,
                 value -> config.shiftHoverMove = value);
-        y = addToggle(x, y, "tweakroll.option.lmb_collect",
-                () -> config.lmbCollect,
-                value -> config.lmbCollect = value);
-        y = addToggle(x, y, "tweakroll.option.rmb_place",
-                () -> config.rmbPlace,
-                value -> config.rmbPlace = value);
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
                 .bounds(x, this.height - 32, 200, 20)

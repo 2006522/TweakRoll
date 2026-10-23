@@ -5,7 +5,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -49,9 +48,6 @@ public final class TweakRoll implements ClientModInitializer {
                 return;
             }
             InventoryTweaks.onScreenOpened(container);
-            ScreenMouseEvents.allowMouseClick(screen).register(InventoryTweaks::onClick);
-            ScreenMouseEvents.allowMouseDrag(screen).register(InventoryTweaks::onDrag);
-            ScreenMouseEvents.allowMouseRelease(screen).register(InventoryTweaks::onRelease);
             // Shift+左键扫过转移必须逐帧轮询：原版容器界面的 mouseDragged 会提前 return，
             // 拖拽事件到不了我们的处理器
             ScreenEvents.afterForeground(screen).register((s, extractor) -> {

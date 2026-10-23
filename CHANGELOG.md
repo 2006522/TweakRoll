@@ -1,5 +1,14 @@
 # 更新日志
 
+## v1.3.0
+
+- **只保留 Shift + 左键扫过转移**，删掉「左键拖拽收集」和「右键拖拽放置」：
+  移除了 `onClick` / `onDrag` / `onRelease` 三个事件处理器、
+  `ScreenMouseEvents` 的点击/拖拽/释放注册、`placeOne` / `collectInto` / `canAccept`。
+- 配置只剩 `shiftHoverMove`；设置界面只剩一行开关。
+- 发布命名统一为 **「鼠标手势 (TweakRoll)」**（Release 标题与 jar 文件名都用这个名字，
+  不再带版本号），以后同样。
+
 ## v1.2.0
 
 - **移除滚轮整理功能**（作者不需要）：连同"滚轮方向 / 搜索顺序 / 每次滚动数量"三项配置、

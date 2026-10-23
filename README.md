@@ -1,30 +1,35 @@
 # 鼠标手势 (TweakRoll)
 
-**按住 Shift 扫一排，背包和物品栏就换好了。**
+**按住 Shift 用左键扫一排，物品栏和背包就换好了。**
 
-这是给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组：在背包、箱子、工作台这些容器界面里，
-用鼠标扫过去的动作取代一格一格的 Shift+点击。
+给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组。只有一件事：把"按住 Shift 逐个点格子"
+换成"按住 Shift 扫过去"，扫过哪格就转哪格。
 
-![version](https://img.shields.io/badge/version-1.2.0-blue)
+![version](https://img.shields.io/badge/version-1.3.0-blue)
 ![minecraft](https://img.shields.io/badge/Minecraft-26.4--snapshot--5-3C8527)
 ![loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
-## 一眼看懂
+## 怎么用
 
-| 操作 | 效果 |
-| --- | --- |
-| **Shift + 按住左键**扫过 | 扫到哪格，那格物品就快速转移：物品栏 ↔ 背包 |
-| **左键**按住拖过同类物品 | 全部并到光标上（拖着版的"双击收集"） |
-| **右键**按住拖过 | 每个格子放一个 |
+1. 按 `E` 打开背包（或箱子、工作台等任意容器）
+2. 按住 **Shift**，再按住**左键**不放
+3. 鼠标扫过想移动的格子
+
+- 在**物品栏（快捷栏）**里 → 移到**背包**
+- 在**背包**里 → 移到**物品栏**
+- 在箱子等**容器界面**里 → 容器 ↔ 玩家背包 互换
+
+按下的第一格由原版处理，之后扫过的新格子由模组补上，所以不会重复转移。
+中途松开 Shift 立刻停止。
 
 ## 下载安装
 
-**① 下载**（点开直下，不用编译）
+**① 下载**
 
-[`mousegestures-1.2.0-mc26.4-snapshot-5.jar`](https://github.com/2006522/TweakRoll/releases/download/v1.2.0/mousegestures-1.2.0-mc26.4-snapshot-5.jar)
+[`鼠标手势 (TweakRoll).jar`](https://github.com/2006522/TweakRoll/releases/download/v1.3.0/%E9%BC%A0%E6%A0%87%E6%89%8B%E5%8A%BF%20(TweakRoll).jar)
 
 **② 前置**：Fabric Loader ≥ 0.19.5 ＋ Fabric API（26.4 版本线，如 `0.164.1+26.4`）＋ Java 25
 
@@ -32,47 +37,22 @@
 
 历史版本见 [Releases](https://github.com/2006522/TweakRoll/releases)。
 
-## 功能细节
-
-### Shift + 左键扫过转移
-
-按住 **Shift** 再按住左键，鼠标扫过哪个格子，那一格的物品就快速转移：
-
-- **物品栏（快捷栏）** → **背包**
-- **背包** → **物品栏**
-- 箱子等**容器界面** → 容器 ↔ 玩家背包 互换
-
-按下的第一格由原版处理，之后扫过的新格子由模组补上，所以不会重复转移。
-中途松开 Shift 立刻停止，不会误转一片；不想要可以在设置里关掉。
-
-> 实现上是**逐帧轮询**物理按键状态，不走 Fabric 的拖拽事件 ——
-> 因为原版 `AbstractContainerScreen.mouseDragged` 会提前 return，拖拽事件在容器界面里根本收不到。
-
-### 左键拖拽收集
-
-光标空着时，左键按住一个格子并拖过其它格子，把沿途**同种物品**全部并到光标上。
-
-### 右键拖拽放置
-
-光标上有物品时，按住右键拖过一排格子，每个格子放一个。
-
 ## 按键
 
 | 按键 | 作用 |
 | --- | --- |
-| `O` | 打开设置界面 |
+| `O` | 打开设置界面（只有一项开关） |
+| `Shift + 左键按住` | 扫过转移 |
 
-可以在原版「按键设置 → 物品栏」里改。
+`O` 可以在原版「按键设置 → 物品栏」里改。
 
 ## 配置
 
-游戏内设置界面（`O`）改完立即写回 `config/tweakroll.properties`：
-
 ```properties
 shiftHoverMove=true   # Shift+左键扫过转移
-lmbCollect=true       # 左键拖拽收集
-rmbPlace=true         # 右键拖拽放置
 ```
+
+文件在 `config/tweakroll.properties`，游戏内按 `O` 也能开关。
 
 ## 环境要求
 
@@ -106,17 +86,24 @@ rmbPlace=true         # 右键拖拽放置
 类加载时缓存一次（`slotClicked` 用 `Method.invoke` 走虚分派，
 所以创造模式背包的重写版本也生效）。
 
-## 和 Mouse Tweaks 的关系
+### 为什么要逐帧轮询
 
-功能思路参考 [Mouse Tweaks](https://github.com/YaLTeR/MouseTweaks)，
-但**代码是重写的，没有使用它的源码**，协议是 MIT。
+扫过转移没有用 Fabric 的拖拽事件，而是每帧在 `ScreenEvents.afterForeground` 里
+读物理按键状态（`InputConstants.isKeyDown` 判断 Shift、`MouseHandler.isLeftPressed()` 判断左键）
+和缩放后的鼠标坐标。
 
-滚轮整理那个功能**已经在 v1.2.0 移除**（作者不需要），所以本模组不再处理滚轮事件。
+原因：原版 `AbstractContainerScreen.mouseDragged` 在把格子加进 `quickCraftSlots` 之后
+会**直接 `return true`**，不会调用 `Screen.mouseDragged`，
+所以 Fabric 的 `ScreenMouseEvents.allowMouseDrag` 在容器界面里根本收不到。
+
+## 历史
+
+- v1.0.x：初始版本（滚轮整理 + 左键拖拽收集 + 右键拖拽放置）
+- v1.1.x：新增 Shift+左键扫过转移
+- v1.2.0：移除滚轮整理
+- v1.3.0：移除左键拖拽收集 / 右键拖拽放置，只保留 Shift+左键扫过转移
 
 ## 已知限制
 
-- 左键拖拽收集 / 右键拖拽放置依赖 Fabric 的拖拽事件，在部分容器界面可能收不到
-  （原版 `mouseDragged` 会提前 return）。Shift 扫过转移已经改成逐帧轮询绕开了这个问题，
-  这两项还没改；遇到无效请提 issue。
-- 槽位定位优先用 `slot.x/slot.y` 自己算，算不到才回退到原版 `hoveredSlot`；
-  自定义槽位布局的模组界面可能不准。
+- 只处理标准容器界面；模组自定义槽位布局如果不用 `slot.x/slot.y`，会回退到原版 `hoveredSlot`。
+- 服务端会照常收到快速移动的点击包，所以多人游戏里同样有效（受服务器反作弊/延迟影响）。

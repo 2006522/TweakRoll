@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "tweakroll",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "name": "鼠标手势(TweakRoll)",
-  "description": "鼠标手势(TweakRoll) 整理背包：Shift+左键扫过转移、左键拖拽收集、右键拖拽放置。Minecraft 26.4-snapshot-5 / Fabric。",
+  "description": "鼠标手势 (TweakRoll)：按住 Shift 用左键扫过格子，物品栏与背包之间快速转移。Minecraft 26.4-snapshot-5 / Fabric。",
   "authors": [
     "2006522"
   ],

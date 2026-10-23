@@ -1,9 +1,7 @@
 {
-  "key.tweakroll.config": "Mouse Gestures Settings",
-  "tweakroll.config.title": "Mouse Gestures",
+  "key.tweakroll.config": "Mouse Gestures (TweakRoll) Settings",
+  "tweakroll.config.title": "Mouse Gestures (TweakRoll)",
   "tweakroll.option.shift_hover_move": "Shift-drag quick move",
-  "tweakroll.option.lmb_collect": "Left-drag collect",
-  "tweakroll.option.rmb_place": "Right-drag place one",
   "tweakroll.value.on": "ON",
   "tweakroll.value.off": "OFF"
 }

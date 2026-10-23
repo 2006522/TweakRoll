@@ -1,9 +1,7 @@
 {
-  "key.tweakroll.config": "打开鼠标手势设置",
-  "tweakroll.config.title": "鼠标手势 设置",
+  "key.tweakroll.config": "打开鼠标手势 (TweakRoll) 设置",
+  "tweakroll.config.title": "鼠标手势 (TweakRoll)",
   "tweakroll.option.shift_hover_move": "Shift+左键扫过转移",
-  "tweakroll.option.lmb_collect": "左键拖拽收集",
-  "tweakroll.option.rmb_place": "右键拖拽逐个放置",
   "tweakroll.value.on": "开",
   "tweakroll.value.off": "关"
 }
