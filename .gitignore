@@ -19,3 +19,7 @@ fapi/
 # 系统
 .DS_Store
 Thumbs.db
+
+# 发布用的 jar（中文文件名，走 raw 直链下载；Release 附件只能 ASCII）
+!release/
+!release/*.jar
