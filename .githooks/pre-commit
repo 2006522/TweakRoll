@@ -4,6 +4,12 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+# release.sh 内部已经自己构建+部署过了，别重复跑
+if [ "${SKIP_HOOK_DEPLOY:-0}" = "1" ]; then
+  echo "[hook] 由 release.sh 调用，跳过"
+  exit 0
+fi
+
 if git diff --cached --name-only | grep -qE '^(src/|build\.sh$)'; then
   echo "[hook] 检测到源码改动，构建并部署到游戏 mods ..."
   bash build.sh

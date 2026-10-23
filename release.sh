@@ -19,6 +19,7 @@ bash build.sh
 [ -f "$JAR" ] || { echo "构建产物不存在: $JAR" >&2; exit 1; }
 
 echo "== 提交并推送 =="
+export SKIP_HOOK_DEPLOY=1
 git add -A
 if git diff --cached --quiet; then
   echo "没有改动需要提交"
