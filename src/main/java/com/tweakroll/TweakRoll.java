@@ -5,6 +5,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -44,6 +45,8 @@ public final class TweakRoll implements ClientModInitializer {
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (screen instanceof AbstractContainerScreen<?> container && wiredScreens.add(screen)) {
                 InventoryTweaks.onScreenOpened(container);
+                // 拖拽事件（跟手），拿不到时靠下面的 tick 轮询兜底
+                ScreenMouseEvents.allowMouseDrag(screen).register(InventoryTweaks::onSweepDrag);
             }
         });
 

@@ -2,7 +2,9 @@ package com.tweakroll;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
@@ -28,18 +30,9 @@ final class InventoryTweaks {
     }
 
     /**
-     * 每帧调用（ScreenEvents.afterForeground）。
-     *
-     * <p>Shift + 左键按住时，鼠标扫过的每个新格子都补一次原版快速移动。
-     * 之所以不用拖拽事件：原版 {@code AbstractContainerScreen.mouseDragged} 在把格子加进
-     * quickCraftSlots 后会直接 return true，根本走不到 {@code Screen.mouseDragged}，
-     * Fabric 的 allowMouseDrag 事件因此收不到。</p>
+     * 客户端 tick 调用（20 次/秒），作为兜底。
      */
     static void tickSweep(AbstractContainerScreen<?> screen) {
-        if (!TweakRoll.config().shiftHoverMove || !ScreenBridge.isReady()) {
-            resetSweep();
-            return;
-        }
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.mouseHandler == null || client.getWindow() == null) {
             resetSweep();
@@ -49,8 +42,32 @@ final class InventoryTweaks {
             resetSweep();
             return;
         }
-        double mouseX = client.mouseHandler.getScaledXPos(client.getWindow());
-        double mouseY = client.mouseHandler.getScaledYPos(client.getWindow());
+        sweepAt(screen, client.mouseHandler.getScaledXPos(client.getWindow()),
+                client.mouseHandler.getScaledYPos(client.getWindow()));
+    }
+
+    /**
+     * Fabric 的拖拽事件（MouseHandler 层拦截，每个鼠标移动事件都会触发），跟手。
+     * 拿不到事件时上面的 tick 轮询兜底，两条路共用 {@link #lastSweepSlot} 去重。
+     */
+    static boolean onSweepDrag(Screen screen, MouseButtonEvent event, double mouseX, double mouseY) {
+        if (!(screen instanceof AbstractContainerScreen<?> container)) {
+            return true;
+        }
+        if (event.button() != 0 || !TweakRoll.config().shiftHoverMove || !shiftDown()) {
+            return true;
+        }
+        sweepAt(container, mouseX, mouseY);
+        // Shift+左键拖拽在原版里没有任何行为，直接吃掉
+        return false;
+    }
+
+    /** 扫过转移的实际处理：同一格不重复触发，按下的第一格交给原版。 */
+    private static void sweepAt(AbstractContainerScreen<?> screen, double mouseX, double mouseY) {
+        if (!TweakRoll.config().shiftHoverMove || !ScreenBridge.isReady()) {
+            resetSweep();
+            return;
+        }
         Slot slot = slotAt(screen, mouseX, mouseY);
         if (++diagTicks >= 20) {
             diagTicks = 0;

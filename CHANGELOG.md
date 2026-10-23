@@ -1,5 +1,17 @@
 # 更新日志
 
+## v1.3.2
+
+对照 Mouse Tweaks 2.31 的实现补齐触发方式。
+
+- 参考实现确认：Shift 检测就是 `InputConstants.isKeyDown(225)` / `(229)`（SDL 扫描码），
+  与 v1.3.1 的修法一致。
+- 新增**拖拽事件**触发路径（`ScreenMouseEvents.allowMouseDrag`）：Fabric 在 `MouseHandler`
+  层用 `@WrapOperation` 拦截 `screen.mouseDragged`，每个鼠标移动事件都会回调，
+  比 20Hz 的 tick 轮询跟手，扫过去不会漏格。
+- 原有的 tick 轮询保留作兜底，两条路径共用同一份"上次处理过的格子"状态去重，
+  不会重复转移。
+
 ## v1.3.1
 
 修复 Shift + 左键扫过转移**完全不触发**。
