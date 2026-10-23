@@ -108,6 +108,11 @@ final class InventoryTweaks {
         return true;
     }
 
+    /** 扫过转移是否正在进行（供 tooltip 屏蔽判断）。 */
+    static boolean isSweeping() {
+        return sweepLeftHeld;
+    }
+
     /** 扫过转移的实际处理：同一格不重复触发，按下的第一格交给原版。 */
     private static void sweepAt(AbstractContainerScreen<?> screen, Slot slot) {
         if (!TweakRoll.config().shiftHoverMove || !ScreenBridge.isReady()) {

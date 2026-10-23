@@ -32,7 +32,7 @@ if [ ! -f "$DEPS/client.jar" ]; then
   exit 1
 fi
 
-CP="$DEPSW/client.jar;$DEPSW/loader.jar;$DEPSW/brigadier.jar"
+CP="$DEPSW/client.jar;$DEPSW/loader.jar;$DEPSW/brigadier.jar;$DEPSW/mixin.jar"
 for jar in "$DEPS"/fapi/*.jar; do
   CP="$CP;$(tomix "$jar")"
 done

@@ -117,10 +117,13 @@ git config core.hooksPath .githooks
 但**客户端 jar 本身没有混淆**（`net/minecraft/client/Minecraft.class` 直接可读）。
 所以直接对官方 jar 编译即可，产物命名空间就是 `official`，不需要 remap。
 
-也正因为如此，模组没有写 mixin —— `AbstractContainerScreen` 的
-`leftPos` / `topPos` / `hoveredSlot` / `slotClicked` 这几个受保护成员用反射拿，
-类加载时缓存一次（`slotClicked` 用 `Method.invoke` 走虚分派，
+也正因为如此，模组只有一个极小的 mixin（`ContainerScreenMixin`，用来在扫过期间屏蔽物品提示），
+其余受保护成员 —— `AbstractContainerScreen` 的 `leftPos` / `topPos` / `hoveredSlot` / `slotClicked`
+—— 都用反射拿，类加载时缓存一次（`slotClicked` 用 `Method.invoke` 走虚分派，
 所以创造模式背包的重写版本也生效）。
+
+mixin 配置里 `defaultRequire` 是 `0`：万一哪天原版方法改名导致注入失败，
+模组也只是"tooltip 不再隐藏"，不会让游戏崩溃。
 
 ### 触发方式（两个坑）
 

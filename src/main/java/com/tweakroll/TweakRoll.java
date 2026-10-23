@@ -32,6 +32,11 @@ public final class TweakRoll implements ClientModInitializer {
         return instance.config;
     }
 
+    /** 扫过转移进行中（给 mixin 屏蔽 tooltip 用）。 */
+    public static boolean isSweeping() {
+        return InventoryTweaks.isSweeping();
+    }
+
     @Override
     public void onInitializeClient() {
         instance = this;

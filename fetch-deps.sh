@@ -15,6 +15,7 @@ CURL="curl -L -sS --ssl-no-revoke"
 MC_URL="https://piston-data.mojang.com/v1/objects/dabe2b9759859995565e7d01c4a96d05043718ee/client.jar"
 FAPI_URL="https://cdn.modrinth.com/data/P7dR8mSH/versions/ZsOLXwvh/fabric-api-0.164.1%2B26.4.jar"
 LOADER_URL="https://bmclapi2.bangbang93.com/maven/net/fabricmc/fabric-loader/0.19.5/fabric-loader-0.19.5.jar"
+MIXIN_URL="https://bmclapi2.bangbang93.com/maven/net/fabricmc/sponge-mixin/0.17.4+mixin.0.8.7/sponge-mixin-0.17.4+mixin.0.8.7.jar"
 BRIG_URL="https://libraries.minecraft.net/com/mojang/brigadier/1.3.11/brigadier-1.3.11.jar"
 
 echo "== client.jar =="
@@ -39,3 +40,6 @@ fi
 echo "完成：依赖在 $DEPS"
 ls -1 "$DEPS"
 echo "fabric-api 模块数：$(ls -1 "$DEPS/fapi" | wc -l)"
+
+echo "== mixin.jar =="
+[ -f "$DEPS/mixin.jar" ] || $CURL -o "$DEPS/mixin.jar" "$MIXIN_URL"

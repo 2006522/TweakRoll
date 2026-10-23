@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8.7",
+  "package": "com.tweakroll.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ContainerScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

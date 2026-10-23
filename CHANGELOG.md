@@ -1,5 +1,15 @@
 # 更新日志
 
+## v1.3.5
+
+扫过转移时不再闪物品名（tooltip）。
+
+- 原因：原版 `AbstractContainerScreen.extractTooltip` 只要悬停格有物品就画提示，
+  扫过时物品被移走、鼠标又落到下一格，名字就一格一格地闪。
+- 加了一个极小 mixin（`com.tweakroll.mixin.ContainerScreenMixin`）注入 `extractTooltip` 的 HEAD，
+  扫过进行中直接 cancel，正常悬停时提示照旧。
+- `defaultRequire: 0`，注入失败也只退回"提示照旧显示"，不会崩游戏。
+
 ## v1.3.4
 
 修复左键判断——**这是"扫过完全没反应"的真正原因**。
