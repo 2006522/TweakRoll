@@ -80,7 +80,7 @@ BODY=$(sed ':a;N;$!ba;s/\\/\\\\/g;s/"/\\"/g;s/\n/\\n/g' build/release-body.md)
 echo "== 建 Release（已存在则复用）=="
 EXIST=$(curl -sS --ssl-no-revoke -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
   "https://api.github.com/repos/$REPO/releases/tags/$TAG")
-EXIST_ID=$(printf '%s' "$EXIST" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*')
+EXIST_ID=$(printf '%s' "$EXIST" | grep -o '"id": *[0-9]*' | head -1 | grep -o '[0-9]*' || true)
 if [ -n "$EXIST_ID" ] && ! printf '%s' "$EXIST" | grep -q 'Not Found'; then
   REL_ID="$EXIST_ID"
   echo "该版本已有 Release，直接复用 id=$REL_ID"
@@ -97,7 +97,7 @@ fi
 
 echo "== 上传 jar =="
 HAVE=$(curl -sS --ssl-no-revoke -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/$REPO/releases/$REL_ID/assets" | grep -o "\"name\": *\"$ASSET\"" | head -1)
+  "https://api.github.com/repos/$REPO/releases/$REL_ID/assets" | grep -o "\"name\": *\"$ASSET\"" | head -1 || true)
 if [ -n "$HAVE" ]; then
   echo "附件 $ASSET 已存在，跳过上传"
   UPLOADED=""
