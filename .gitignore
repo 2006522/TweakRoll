@@ -1,0 +1,21 @@
+# 构建产物
+build/
+dist/
+
+# 依赖（本地缓存，用 fetch-deps.sh 下载）
+deps/
+mclibs/
+fapi/
+*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# 系统
+.DS_Store
+Thumbs.db

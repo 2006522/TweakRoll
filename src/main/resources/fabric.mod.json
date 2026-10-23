@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "tweakroll",
+  "version": "1.0.0",
+  "name": "TweakRoll",
+  "description": "滚轮整理背包、左键拖拽收集、右键拖拽放置。Minecraft 26.4-snapshot-5 / Fabric。",
+  "authors": [
+    "TweakRoll"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.tweakroll.TweakRoll"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "fabric-api": "*",
+    "minecraft": "*",
+    "java": ">=25"
+  }
+}

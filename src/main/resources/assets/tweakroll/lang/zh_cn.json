@@ -1,0 +1,19 @@
+{
+  "key.tweakroll.config": "打开 TweakRoll 设置",
+  "key.tweakroll.toggle_wheel": "在此容器关闭/开启滚轮整理",
+  "tweakroll.config.title": "TweakRoll 设置",
+  "tweakroll.option.wheel": "滚轮整理",
+  "tweakroll.option.lmb_collect": "左键拖拽收集",
+  "tweakroll.option.rmb_place": "右键拖拽逐个放置",
+  "tweakroll.option.scroll_direction": "滚轮方向",
+  "tweakroll.option.search_order": "搜索顺序",
+  "tweakroll.option.scaling": "每格滚动数量",
+  "tweakroll.value.on": "开",
+  "tweakroll.value.off": "关",
+  "tweakroll.value.normal": "正向",
+  "tweakroll.value.inverted": "反向",
+  "tweakroll.value.first_to_last": "从前到后",
+  "tweakroll.value.last_to_first": "从后到前",
+  "tweakroll.value.always_one": "每次一个",
+  "tweakroll.value.proportional": "跟随滚动量"
+}

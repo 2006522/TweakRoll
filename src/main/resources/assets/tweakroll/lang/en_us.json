@@ -1,0 +1,19 @@
+{
+  "key.tweakroll.config": "TweakRoll Settings",
+  "key.tweakroll.toggle_wheel": "Toggle wheel tweak here",
+  "tweakroll.config.title": "TweakRoll",
+  "tweakroll.option.wheel": "Wheel tweak",
+  "tweakroll.option.lmb_collect": "Left-drag collect",
+  "tweakroll.option.rmb_place": "Right-drag place one",
+  "tweakroll.option.scroll_direction": "Scroll direction",
+  "tweakroll.option.search_order": "Search order",
+  "tweakroll.option.scaling": "Items per notch",
+  "tweakroll.value.on": "ON",
+  "tweakroll.value.off": "OFF",
+  "tweakroll.value.normal": "Normal",
+  "tweakroll.value.inverted": "Inverted",
+  "tweakroll.value.first_to_last": "First to last",
+  "tweakroll.value.last_to_first": "Last to first",
+  "tweakroll.value.always_one": "Always one",
+  "tweakroll.value.proportional": "Proportional"
+}
