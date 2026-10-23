@@ -2,10 +2,12 @@ package com.tweakroll;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -58,10 +60,92 @@ final class InventorySorter {
             Log.info("整理已取消");
             return true;
         }
-        return start((AbstractContainerScreen<?>) screen);
+        if (TweakRoll.config().instantSort && sortOnServer()) {
+            return true;
+        }
+        return startClickSort((AbstractContainerScreen<?>) screen);
     }
 
-    private static boolean start(AbstractContainerScreen<?> screen) {
+    /**
+     * 单人游戏专用：直接在集成服务器的容器里改内容，再整体同步一次。
+     * 没有任何点击，客户端看到的是一次刷新就整齐了。
+     */
+    private static boolean sortOnServer() {
+        Minecraft client = Minecraft.getInstance();
+        if (!client.hasSingleplayerServer() || client.player == null) {
+            return false;
+        }
+        IntegratedServer server = client.getSingleplayerServer();
+        if (server == null) {
+            return false;
+        }
+        String name = client.getUser().getName();
+        server.executeIfPossible(() -> {
+            ServerPlayer player = server.getPlayerList().getPlayerByName(name);
+            if (player == null) {
+                return;
+            }
+            InventoryMenu menu = player.inventoryMenu;
+            if (menu.slots.size() <= BAG_LAST) {
+                return;
+            }
+            ItemStack[] current = new ItemStack[BAG_SIZE];
+            for (int i = 0; i < BAG_SIZE; i++) {
+                current[i] = menu.slots.get(BAG_FIRST + i).getItem().copy();
+            }
+            ItemStack[] desired = sortedCopy(current);
+            for (int i = 0; i < BAG_SIZE; i++) {
+                if (!sameStack(current[i], desired[i])) {
+                    menu.slots.get(BAG_FIRST + i).set(desired[i]);
+                }
+            }
+            menu.broadcastChanges();
+            Log.info("已在服务端直接整理背包（零点击）");
+        });
+        return true;
+    }
+
+    /** 纯计算：合并同种堆叠 + 排序，返回目标排列（不产生点击）。 */
+    private static ItemStack[] sortedCopy(ItemStack[] source) {
+        ItemStack[] current = new ItemStack[BAG_SIZE];
+        for (int i = 0; i < BAG_SIZE; i++) {
+            current[i] = source[i].copy();
+        }
+        for (int i = 0; i < BAG_SIZE; i++) {
+            if (current[i].isEmpty()) {
+                continue;
+            }
+            for (int j = i + 1; j < BAG_SIZE; j++) {
+                if (current[j].isEmpty() || !ItemStack.isSameItemSameComponents(current[i], current[j])) {
+                    continue;
+                }
+                int room = current[i].getMaxStackSize() - current[i].getCount();
+                if (room <= 0) {
+                    break;
+                }
+                int moved = Math.min(room, current[j].getCount());
+                int left = current[j].getCount() - moved;
+                current[i] = withCount(current[i], current[i].getCount() + moved);
+                current[j] = left <= 0 ? ItemStack.EMPTY : withCount(current[j], left);
+            }
+        }
+        List<ItemStack> list = new ArrayList<>();
+        for (ItemStack stack : current) {
+            if (!stack.isEmpty()) {
+                list.add(stack);
+            }
+        }
+        list.sort(Comparator
+                .comparing((ItemStack stack) -> stack.getItem().getDescriptionId())
+                .thenComparing(stack -> -stack.getCount()));
+        ItemStack[] result = new ItemStack[BAG_SIZE];
+        for (int i = 0; i < BAG_SIZE; i++) {
+            result[i] = i < list.size() ? list.get(i) : ItemStack.EMPTY;
+        }
+        return result;
+    }
+
+    private static boolean startClickSort(AbstractContainerScreen<?> screen) {
         if (!(screen.getMenu() instanceof InventoryMenu menu) || !ScreenBridge.isReady()) {
             return false;
         }

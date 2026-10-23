@@ -28,6 +28,9 @@ public final class ConfigScreen extends Screen {
         addToggle(x, 64, "tweakroll.option.sort_inventory",
                 () -> config.sortInventory,
                 value -> config.sortInventory = value);
+        addToggle(x, 88, "tweakroll.option.instant_sort",
+                () -> config.instantSort,
+                value -> config.instantSort = value);
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
                 .bounds(x, this.height - 32, 200, 20)

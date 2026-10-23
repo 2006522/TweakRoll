@@ -15,6 +15,8 @@ public final class Config {
     public boolean shiftHoverMove = true;
     /** R 键一键整理背包（合并堆叠 + 按物品排序）。 */
     public boolean sortInventory = true;
+    /** 单人游戏时直接在集成服务器改数据（零点击、瞬间完成）。 */
+    public boolean instantSort = true;
 
     private Path path() {
         return FabricLoader.getInstance().getConfigDir().resolve("tweakroll.properties");
@@ -34,12 +36,14 @@ public final class Config {
         }
         shiftHoverMove = readBoolean(properties, "shiftHoverMove", shiftHoverMove);
         sortInventory = readBoolean(properties, "sortInventory", sortInventory);
+        instantSort = readBoolean(properties, "instantSort", instantSort);
     }
 
     public void save() {
         Properties properties = new Properties();
         properties.setProperty("shiftHoverMove", Boolean.toString(shiftHoverMove));
         properties.setProperty("sortInventory", Boolean.toString(sortInventory));
+        properties.setProperty("instantSort", Boolean.toString(instantSort));
         Path file = path();
         try {
             Files.createDirectories(file.getParent());
