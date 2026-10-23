@@ -11,7 +11,7 @@
 
 点直接下，不用登录、不用编译：
 
-**[⬇ mousegestures-1.0.1-mc26.4-snapshot-5.jar](https://github.com/2006522/TweakRoll/releases/download/v1.0.1/mousegestures-1.0.1-mc26.4-snapshot-5.jar)**
+**[⬇ mousegestures-1.1.0-mc26.4-snapshot-5.jar](https://github.com/2006522/TweakRoll/releases/download/v1.1.0/mousegestures-1.1.0-mc26.4-snapshot-5.jar)**
 
 历史版本见 [Releases](https://github.com/2006522/TweakRoll/releases)。
 
@@ -44,6 +44,15 @@
 ### 右键拖拽放置
 光标上有物品时，按住右键拖过一排格子，每个格子放一个。
 
+### Shift + 左键扫过转移
+按住 **Shift** 再按住左键，鼠标扫过哪个格子，那一格的物品就快速转移：
+
+- 在**物品栏（快捷栏）**里的 → 移到**背包**
+- 在**背包**里的 → 移到**物品栏**
+- 在箱子等**容器界面**里 → 容器 ↔ 玩家背包 互换
+
+中途松开 Shift 会立刻停止，不会误转一片。不想用可以在设置里关掉。
+
 ### 容器级开关
 在容器界面按 **左 Alt** 临时关掉该界面的滚轮整理（重新打开容器恢复）。
 
@@ -64,6 +73,7 @@
 wheelTweak=true           # 滚轮整理
 lmbCollect=true           # 左键拖拽收集
 rmbPlace=true             # 右键拖拽放置
+shiftHoverMove=true       # Shift+左键扫过转移
 scrollDirection=NORMAL    # NORMAL / INVERTED
 searchOrder=FIRST_TO_LAST # FIRST_TO_LAST / LAST_TO_FIRST
 scaling=ALWAYS_ONE        # ALWAYS_ONE / PROPORTIONAL

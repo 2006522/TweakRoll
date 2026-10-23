@@ -76,12 +76,16 @@ final class ScreenBridge {
      * 走原版 {@code slotClicked}，这样创造模式背包等重写过的界面也能正确响应。
      */
     static void click(AbstractContainerScreen<?> screen, Slot slot, int button) {
+        click(screen, slot, button, ContainerInput.PICKUP);
+    }
+
+    static void click(AbstractContainerScreen<?> screen, Slot slot, int button, ContainerInput input) {
         if (slot == null) {
             return;
         }
         try {
             // Method.invoke 会走虚分派，因此 CreativeModeInventoryScreen 的重写依然生效
-            slotClickedMethod.invoke(screen, slot, slot.index, button, ContainerInput.PICKUP);
+            slotClickedMethod.invoke(screen, slot, slot.index, button, input);
         } catch (Throwable throwable) {
             Log.error("模拟点击失败", throwable);
         }

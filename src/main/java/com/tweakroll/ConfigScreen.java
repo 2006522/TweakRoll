@@ -21,7 +21,7 @@ public final class ConfigScreen extends Screen {
     protected void init() {
         Config config = TweakRoll.config();
         int x = this.width / 2 - 100;
-        int y = 40;
+        int y = 34;
 
         y = addToggle(x, y, "tweakroll.option.wheel",
                 () -> config.wheelTweak,
@@ -32,6 +32,9 @@ public final class ConfigScreen extends Screen {
         y = addToggle(x, y, "tweakroll.option.rmb_place",
                 () -> config.rmbPlace,
                 value -> config.rmbPlace = value);
+        y = addToggle(x, y, "tweakroll.option.shift_hover_move",
+                () -> config.shiftHoverMove,
+                value -> config.shiftHoverMove = value);
         y = addCycle(x, y, "tweakroll.option.scroll_direction",
                 config.scrollDirection.key,
                 () -> config.scrollDirection = config.scrollDirection.next());
@@ -70,7 +73,7 @@ public final class ConfigScreen extends Screen {
                 this.minecraft.setScreenAndShow(new ConfigScreen(this.parent));
             }
         }).bounds(x, y, 200, 20).build());
-        return y + 24;
+        return y + 22;
     }
 
     @Override

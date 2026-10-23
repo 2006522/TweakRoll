@@ -15,5 +15,6 @@
   "tweakroll.value.first_to_last": "First to last",
   "tweakroll.value.last_to_first": "Last to first",
   "tweakroll.value.always_one": "Always one",
-  "tweakroll.value.proportional": "Proportional"
+  "tweakroll.value.proportional": "Proportional",
+  "tweakroll.option.shift_hover_move": "Shift-drag quick move"
 }

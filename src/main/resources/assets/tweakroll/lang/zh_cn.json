@@ -15,5 +15,6 @@
   "tweakroll.value.first_to_last": "从前到后",
   "tweakroll.value.last_to_first": "从后到前",
   "tweakroll.value.always_one": "每次一个",
-  "tweakroll.value.proportional": "跟随滚动量"
+  "tweakroll.value.proportional": "跟随滚动量",
+  "tweakroll.option.shift_hover_move": "Shift+左键扫过转移"
 }

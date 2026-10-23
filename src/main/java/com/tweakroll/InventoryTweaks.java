@@ -1,10 +1,12 @@
 package com.tweakroll;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
@@ -15,13 +17,17 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * 鼠标整理逻辑本体：滚轮搬运 + 左键拖拽收集 + 右键拖拽放置。
+ * 鼠标整理逻辑本体：滚轮搬运 + 左键拖拽收集 + 右键拖拽放置 + Shift 扫过快速转移。
  */
 final class InventoryTweaks {
+    private static final int GLFW_KEY_LEFT_SHIFT = 340;
+    private static final int GLFW_KEY_RIGHT_SHIFT = 344;
+
     private enum Mode {
         NONE,
         COLLECT,
-        PLACE
+        PLACE,
+        QUICK_MOVE
     }
 
     private static final Map<Screen, Boolean> WHEEL_DISABLED = new WeakHashMap<>();
@@ -86,10 +92,21 @@ final class InventoryTweaks {
         }
         int button = event.button();
         Slot slot = slotAt(container, event.x(), event.y());
+        ItemStack carried = container.getMenu().getCarried();
+
+        // Shift + 按住左键扫过格子：每扫到一个格子就快速转移（物品栏 ↔ 背包）
+        if (button == 0 && config.shiftHoverMove && event.hasShiftDown()) {
+            dragScreen = container;
+            dragButton = 0;
+            mode = Mode.QUICK_MOVE;
+            lastDragSlot = slot;
+            // 首次点击交给原版处理（原版 Shift+左键本来就是快速移动）
+            return true;
+        }
+
         if (slot == null) {
             return true;
         }
-        ItemStack carried = container.getMenu().getCarried();
 
         if (button == 0 && config.lmbCollect && carried.isEmpty() && !slot.getItem().isEmpty()) {
             // 原版这次点击会把整叠拿起来，之后的拖拽由我们接管
@@ -111,6 +128,11 @@ final class InventoryTweaks {
         if (mode == Mode.NONE || dragScreen != screen || event.button() != dragButton) {
             return true;
         }
+        // 中途松开 Shift 就退出扫过模式，避免误操作
+        if (mode == Mode.QUICK_MOVE && !shiftDown()) {
+            resetDrag();
+            return true;
+        }
         if (!(screen instanceof AbstractContainerScreen<?> container)) {
             return true;
         }
@@ -121,8 +143,10 @@ final class InventoryTweaks {
         lastDragSlot = slot;
         if (mode == Mode.COLLECT) {
             collectInto(container, slot);
-        } else {
+        } else if (mode == Mode.PLACE) {
             placeOne(container, slot);
+        } else {
+            quickMove(container, slot);
         }
         // 接管拖拽，避免原版快速合成逻辑同时生效
         return false;
@@ -163,6 +187,19 @@ final class InventoryTweaks {
             return;
         }
         ScreenBridge.click(screen, slot, 1);
+    }
+
+    /** 走原版 Shift+左键 的快速移动：物品栏 → 背包，背包 → 物品栏（容器界面则与容器互换）。 */
+    private static void quickMove(AbstractContainerScreen<?> screen, Slot slot) {
+        if (slot == null || slot.getItem().isEmpty()) {
+            return;
+        }
+        ScreenBridge.click(screen, slot, 0, ContainerInput.QUICK_MOVE);
+    }
+
+    private static boolean shiftDown() {
+        return InputConstants.isKeyDown(GLFW_KEY_LEFT_SHIFT)
+                || InputConstants.isKeyDown(GLFW_KEY_RIGHT_SHIFT);
     }
 
     /** 把悬停格与另一侧背包之间搬运一个物品。 */

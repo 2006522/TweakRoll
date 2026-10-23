@@ -62,6 +62,8 @@ public final class Config {
     public boolean lmbCollect = true;
     /** 右键按住拖拽，往经过的格子各放一个。 */
     public boolean rmbPlace = true;
+    /** 按住 Shift + 左键扫过格子，自动快速转移（物品栏 ↔ 背包）。 */
+    public boolean shiftHoverMove = true;
     public ScrollDirection scrollDirection = ScrollDirection.NORMAL;
     public SearchOrder searchOrder = SearchOrder.FIRST_TO_LAST;
     public Scaling scaling = Scaling.ALWAYS_ONE;
@@ -85,6 +87,7 @@ public final class Config {
         wheelTweak = readBoolean(properties, "wheelTweak", wheelTweak);
         lmbCollect = readBoolean(properties, "lmbCollect", lmbCollect);
         rmbPlace = readBoolean(properties, "rmbPlace", rmbPlace);
+        shiftHoverMove = readBoolean(properties, "shiftHoverMove", shiftHoverMove);
         scrollDirection = readEnum(properties, "scrollDirection", ScrollDirection.class, scrollDirection);
         searchOrder = readEnum(properties, "searchOrder", SearchOrder.class, searchOrder);
         scaling = readEnum(properties, "scaling", Scaling.class, scaling);
@@ -95,6 +98,7 @@ public final class Config {
         properties.setProperty("wheelTweak", Boolean.toString(wheelTweak));
         properties.setProperty("lmbCollect", Boolean.toString(lmbCollect));
         properties.setProperty("rmbPlace", Boolean.toString(rmbPlace));
+        properties.setProperty("shiftHoverMove", Boolean.toString(shiftHoverMove));
         properties.setProperty("scrollDirection", scrollDirection.name());
         properties.setProperty("searchOrder", searchOrder.name());
         properties.setProperty("scaling", scaling.name());
