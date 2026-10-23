@@ -1,8 +1,8 @@
-# 鼠标手势（TweakRoll）
+# 鼠标手势(TweakRoll)
 
 给 **Minecraft 26.4-snapshot-5 (Fabric)** 的背包鼠标增强模组：滚轮整理、左键拖拽收集、右键拖拽放置。
 
-游戏内显示名是「鼠标手势」；内部 mod id 仍是 `tweakroll`（配置路径、已装实例都依赖它，所以没有跟着改）。
+游戏内显示名是「鼠标手势(TweakRoll)」；内部 mod id 仍是 `tweakroll`（配置路径、已装实例都依赖它，所以没有跟着改）。
 
 功能对标 [Mouse Tweaks](https://github.com/YaLTeR/MouseTweaks)（`MouseTweaks 2.31` / MC 26.3），
 但代码是重写的，未使用其源码。
