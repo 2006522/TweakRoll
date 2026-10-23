@@ -21,29 +21,17 @@ public final class ConfigScreen extends Screen {
     protected void init() {
         Config config = TweakRoll.config();
         int x = this.width / 2 - 100;
-        int y = 34;
+        int y = 40;
 
-        y = addToggle(x, y, "tweakroll.option.wheel",
-                () -> config.wheelTweak,
-                value -> config.wheelTweak = value);
+        y = addToggle(x, y, "tweakroll.option.shift_hover_move",
+                () -> config.shiftHoverMove,
+                value -> config.shiftHoverMove = value);
         y = addToggle(x, y, "tweakroll.option.lmb_collect",
                 () -> config.lmbCollect,
                 value -> config.lmbCollect = value);
         y = addToggle(x, y, "tweakroll.option.rmb_place",
                 () -> config.rmbPlace,
                 value -> config.rmbPlace = value);
-        y = addToggle(x, y, "tweakroll.option.shift_hover_move",
-                () -> config.shiftHoverMove,
-                value -> config.shiftHoverMove = value);
-        y = addCycle(x, y, "tweakroll.option.scroll_direction",
-                config.scrollDirection.key,
-                () -> config.scrollDirection = config.scrollDirection.next());
-        y = addCycle(x, y, "tweakroll.option.search_order",
-                config.searchOrder.key,
-                () -> config.searchOrder = config.searchOrder.next());
-        y = addCycle(x, y, "tweakroll.option.scaling",
-                config.scaling.key,
-                () -> config.scaling = config.scaling.next());
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
                 .bounds(x, this.height - 32, 200, 20)
@@ -51,29 +39,21 @@ public final class ConfigScreen extends Screen {
     }
 
     private int addToggle(int x, int y, String key, Supplier<Boolean> getter, Consumer<Boolean> setter) {
-        return addButton(x, y, () -> Component.translatable(key)
-                .append(": ")
-                .append(Component.translatable(getter.get() ? "tweakroll.value.on" : "tweakroll.value.off")),
-                () -> setter.accept(!getter.get()));
-    }
-
-    private int addCycle(int x, int y, String key, String valueKey, Runnable action) {
-        return addButton(x, y, () -> Component.translatable(key)
-                .append(": ")
-                .append(Component.translatable(valueKey)),
-                action);
-    }
-
-    private int addButton(int x, int y, Supplier<Component> label, Runnable action) {
-        addRenderableWidget(Button.builder(label.get(), button -> {
-            action.run();
-            TweakRoll.config().save();
-            // 重建界面以刷新按钮文字
-            if (this.minecraft != null) {
-                this.minecraft.setScreenAndShow(new ConfigScreen(this.parent));
-            }
-        }).bounds(x, y, 200, 20).build());
-        return y + 22;
+        addRenderableWidget(Button.builder(
+                        Component.translatable(key)
+                                .append(": ")
+                                .append(Component.translatable(getter.get() ? "tweakroll.value.on" : "tweakroll.value.off")),
+                        button -> {
+                            setter.accept(!getter.get());
+                            TweakRoll.config().save();
+                            // 重建界面以刷新按钮文字
+                            if (this.minecraft != null) {
+                                this.minecraft.setScreenAndShow(new ConfigScreen(this.parent));
+                            }
+                        })
+                .bounds(x, y, 200, 20)
+                .build());
+        return y + 24;
     }
 
     @Override

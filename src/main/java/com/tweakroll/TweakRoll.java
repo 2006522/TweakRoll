@@ -18,7 +18,6 @@ public final class TweakRoll implements ClientModInitializer {
     public static final String MOD_ID = "tweakroll";
 
     private static final int KEY_O = 79;
-    private static final int KEY_LEFT_ALT = 342;
 
     private static TweakRoll instance;
 
@@ -26,7 +25,6 @@ public final class TweakRoll implements ClientModInitializer {
     private final Set<Screen> wiredScreens = Collections.newSetFromMap(new WeakHashMap<>());
 
     private KeyMapping configKey;
-    private KeyMapping toggleWheelKey;
 
     public static TweakRoll get() {
         return instance;
@@ -45,8 +43,6 @@ public final class TweakRoll implements ClientModInitializer {
 
         configKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.tweakroll.config", InputConstants.Type.KEYBOARD, KEY_O, KeyMapping.Category.INVENTORY));
-        toggleWheelKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.tweakroll.toggle_wheel", InputConstants.Type.KEYBOARD, KEY_LEFT_ALT, KeyMapping.Category.INVENTORY));
 
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof AbstractContainerScreen<?> container) || !wiredScreens.add(screen)) {
@@ -56,7 +52,6 @@ public final class TweakRoll implements ClientModInitializer {
             ScreenMouseEvents.allowMouseClick(screen).register(InventoryTweaks::onClick);
             ScreenMouseEvents.allowMouseDrag(screen).register(InventoryTweaks::onDrag);
             ScreenMouseEvents.allowMouseRelease(screen).register(InventoryTweaks::onRelease);
-            ScreenMouseEvents.allowMouseScroll(screen).register(InventoryTweaks::onScroll);
             // Shift+左键扫过转移必须逐帧轮询：原版容器界面的 mouseDragged 会提前 return，
             // 拖拽事件到不了我们的处理器
             ScreenEvents.afterForeground(screen).register((s, extractor) -> {
@@ -69,11 +64,6 @@ public final class TweakRoll implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (configKey.consumeClick()) {
                 client.setScreenAndShow(new ConfigScreen(client.gui.screen()));
-            }
-            while (toggleWheelKey.consumeClick()) {
-                if (client.gui.screen() instanceof AbstractContainerScreen<?> container) {
-                    InventoryTweaks.toggleWheel(container);
-                }
             }
         });
 
