@@ -1,6 +1,7 @@
 package com.tweakroll;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -41,6 +42,10 @@ final class InventorySorter {
     /** 按下 R（在背包界面里）时调用；返回 true 表示已经接管这次按键。 */
     static boolean onKeyPress(Screen screen, KeyEvent event) {
         if (!TweakRoll.config().sortInventory || !(screen instanceof InventoryScreen)) {
+            return false;
+        }
+        // 创造模式背包有搜索框，正在输入时 R 就是普通字符，不能抢
+        if (screen.getFocused() instanceof EditBox) {
             return false;
         }
         var key = TweakRoll.sortKey();
