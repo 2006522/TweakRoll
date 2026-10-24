@@ -4,7 +4,7 @@
 
 给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组。
 
-![version](https://img.shields.io/badge/version-1.5.2-blue)
+![version](https://img.shields.io/badge/version-1.6.0-blue)
 ![minecraft](https://img.shields.io/badge/Minecraft-26.4--snapshot--5-3C8527)
 ![loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -24,10 +24,18 @@
 按下的第一格由原版处理，之后扫过的新格子由模组补上，所以不会重复转移。
 中途松开 Shift 立刻停止。扫过期间不会弹物品提示（tooltip），不会一格一格地闪名字。
 
-### R 键整理背包
+### R 键整理
 
-在背包界面按 `R`：合并同种物品堆叠 → 按物品 ID 排序 → 排满前面的格子。
-只动背包的 27 格，不碰快捷栏 / 盔甲 / 合成格。整理途中再按一次 `R` 取消。
+按 `R` 整理：合并同种物品堆叠 → 按物品 ID 排序 → 排满前面的格子。
+
+| 界面 | 整理范围 |
+| --- | --- |
+| 背包 | 背包的 27 格（不碰快捷栏、盔甲、合成格） |
+| 箱子 / 大箱子 / 木桶 / 潜影盒 | 容器那 27 / 54 格 |
+| 发射器（投掷器）/ 漏斗 | 容器那 9 / 5 格 |
+| 熔炉、工作台等 | 不整理（有结果格，避免误操作） |
+
+整理途中再按一次 `R` 取消。
 **单人游戏是零点击的**：直接把服务端数据改好再同步，瞬间整齐；
 多人服务器上退回发包模拟点击，满背包约 0.6 秒。
 
@@ -35,10 +43,10 @@
 
 **① 下载**
 
-[`鼠标手势 (TweakRoll) 1.5.2`](https://github.com/2006522/TweakRoll/releases/download/v1.5.2/TweakRoll-1.5.2.jar)
+[`鼠标手势 (TweakRoll) 1.6.0`](https://github.com/2006522/TweakRoll/releases/download/v1.6.0/TweakRoll-1.6.0.jar)
 
-> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.5.2.jar`，
-> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.5.2」。
+> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.6.0.jar`，
+> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.6.0」。
 
 **② 前置**：Fabric Loader ≥ 0.19.5 ＋ Fabric API（26.4 版本线，如 `0.164.1+26.4`）＋ Java 25
 
@@ -52,7 +60,7 @@
 | --- | --- |
 | `O` | 打开设置界面 |
 | `Shift + 左键按住` | 扫过转移 |
-| `R` | 一键整理背包（仅背包界面） |
+| `R` | 一键整理（背包 / 箱子等容器） |
 
 `O` 可以在原版「按键设置 → 物品栏」里改。
 
@@ -60,7 +68,7 @@
 
 ```properties
 shiftHoverMove=true   # Shift+左键扫过转移
-sortInventory=true    # R 键一键整理背包
+sortInventory=true    # R 键一键整理（背包 + 容器）
 instantSort=true      # 单人游戏走服务端直改（零点击）
 ```
 
