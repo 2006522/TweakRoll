@@ -31,7 +31,6 @@ public final class SortButton {
 
     private static final int KIND_PRIMARY = 0;
     private static final int KIND_BAG = 1;
-    private static final int KIND_CREATIVE = 2;
 
     /** 按界面分组：创造模式和生存背包会同时存在，不能共用一个全局列表。 */
     private static final Map<Screen, List<SortButton>> ACTIVE = new WeakHashMap<>();
@@ -66,10 +65,8 @@ public final class SortButton {
         int[] containerSlots = InventorySorter.containerSlots(screen.getMenu());
         int[] bagSlots = InventorySorter.bagSlots(screen.getMenu());
 
+        // 创造模式物品栏不加按钮（只在生存模式的背包 / 容器界面出现）
         if (screen instanceof CreativeModeInventoryScreen) {
-            if (bagSlots.length > 0) {
-                add(new SortButton(screen, bagSlots, KIND_CREATIVE), "tweakroll.button.sort");
-            }
             return;
         }
         if (screen.getMenu() instanceof InventoryMenu) {
@@ -93,9 +90,6 @@ public final class SortButton {
                 .bounds(0, 0, WIDTH, HEIGHT)
                 .build();
         button.place();
-        if (button.kind == KIND_CREATIVE) {
-            button.widget.setVisible(creativeInventoryOpen(button.screen));
-        }
         ScreenBridge.addWidget(button.screen, button.widget);
         list.add(button);
         Log.info("整理按钮已挂载：" + button.screen.getClass().getSimpleName()
@@ -111,20 +105,10 @@ public final class SortButton {
                 if (button.widget == null) {
                     continue;
                 }
-                if (button.kind == KIND_CREATIVE) {
-                    boolean show = creativeInventoryOpen(button.screen);
-                    if (show && !button.dragging && !ScreenBridge.isRegistered(button.screen, button.widget)) {
-                        ScreenBridge.addWidget(button.screen, button.widget);
-                        Log.info("整理按钮被界面清掉，已重新挂载");
-                    }
-                    if (button.widget.isVisible() != show) {
-                        Log.info("整理按钮显示状态 -> " + show);
-                    }
-                    button.widget.setVisible(show);
-                    if (!show) {
-                        button.dragging = false;
-                        continue;
-                    }
+                // 被界面重建清掉时补挂回来
+                if (!button.dragging && !ScreenBridge.isRegistered(button.screen, button.widget)) {
+                    ScreenBridge.addWidget(button.screen, button.widget);
+                    Log.info("整理按钮被界面清掉，已重新挂载");
                 }
                 if (button.dragging) {
                     button.follow();
@@ -133,18 +117,6 @@ public final class SortButton {
                 }
             }
         }
-    }
-
-    /** 创造模式只在「物品栏」那一页显示（原版公开方法 `isInventoryOpen()`）。 */
-    private static boolean creativeInventoryOpen(AbstractContainerScreen<?> screen) {
-        if (screen instanceof CreativeModeInventoryScreen creative) {
-            try {
-                return creative.isInventoryOpen();
-            } catch (Throwable throwable) {
-                return true;
-            }
-        }
-        return true;
     }
 
     // ---------------------------------------------------------------- 点击 / 拖动
@@ -234,10 +206,6 @@ public final class SortButton {
                 config.sortBagButtonDx = dx;
                 config.sortBagButtonDy = dy;
             }
-            case KIND_CREATIVE -> {
-                config.sortCreativeDx = dx;
-                config.sortCreativeDy = dy;
-            }
             default -> {
                 config.sortButtonDx = dx;
                 config.sortButtonDy = dy;
@@ -267,10 +235,6 @@ public final class SortButton {
                 dx = config.sortBagButtonDx;
                 dy = config.sortBagButtonDy;
             }
-            case KIND_CREATIVE -> {
-                dx = config.sortCreativeDx;
-                dy = config.sortCreativeDy;
-            }
             default -> {
                 dx = config.sortButtonDx;
                 dy = config.sortButtonDy;
@@ -290,10 +254,6 @@ public final class SortButton {
     }
 
     private String kindName() {
-        return switch (kind) {
-            case KIND_BAG -> "背包";
-            case KIND_CREATIVE -> "创造";
-            default -> "主";
-        };
+        return kind == KIND_BAG ? "背包" : "主";
     }
 }
