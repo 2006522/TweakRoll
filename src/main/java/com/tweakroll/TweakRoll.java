@@ -57,7 +57,12 @@ public final class TweakRoll implements ClientModInitializer {
                 "key.tweakroll.sort", InputConstants.Type.KEYBOARD, InputConstants.KEY_R, KeyMapping.Category.INVENTORY));
 
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (screen instanceof AbstractContainerScreen<?> container && wiredScreens.add(screen)) {
+            if (!(screen instanceof AbstractContainerScreen<?> container)) {
+                return;
+            }
+            // 窗口缩放会重建控件，所以每次 init 都要重新挂按钮
+            InventorySorter.addButton(container);
+            if (wiredScreens.add(screen)) {
                 InventoryTweaks.onScreenOpened(container);
                 // 拖拽事件（跟手），拿不到时靠下面的 tick 轮询兜底
                 ScreenMouseEvents.allowMouseDrag(screen).register(InventoryTweaks::onSweepDrag);

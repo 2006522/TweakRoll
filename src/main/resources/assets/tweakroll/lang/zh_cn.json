@@ -6,5 +6,6 @@
   "tweakroll.option.sort_inventory": "R 键一键整理背包",
   "tweakroll.value.on": "开",
   "tweakroll.value.off": "关",
-  "tweakroll.option.instant_sort": "单人瞬间整理（零点击）"
+  "tweakroll.option.instant_sort": "单人瞬间整理（零点击）",
+  "tweakroll.button.sort": "整理"
 }

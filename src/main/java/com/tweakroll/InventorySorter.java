@@ -1,6 +1,7 @@
 package com.tweakroll;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -16,6 +17,7 @@ import net.minecraft.world.inventory.HopperMenu;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.ShulkerBoxMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayDeque;
@@ -60,6 +62,17 @@ final class InventorySorter {
         if (key == null || !key.matches(event)) {
             return false;
         }
+        // 按住 R 时按键会重复触发，短时间内只认一次
+        long now = System.currentTimeMillis();
+        if (now - lastSortMillis < 250L) {
+            return true;
+        }
+        lastSortMillis = now;
+        return trigger(container);
+    }
+
+    /** 真正开始整理：按键和界面按钮都走这里。 */
+    static boolean trigger(AbstractContainerScreen<?> container) {
         // 正在整理时再按一次就当取消
         if (!QUEUE.isEmpty()) {
             QUEUE.clear();
@@ -67,13 +80,6 @@ final class InventorySorter {
             Log.info("整理已取消");
             return true;
         }
-        // 按住 R 时按键会重复触发，短时间内只认一次
-        long now = System.currentTimeMillis();
-        if (now - lastSortMillis < 250L) {
-            return true;
-        }
-        lastSortMillis = now;
-
         int[] slots = pickSlots(container.getMenu());
         if (slots.length == 0) {
             Log.info("这个界面没有可整理的容器");
@@ -83,6 +89,24 @@ final class InventorySorter {
             return true;
         }
         return startClickSort(container, slots);
+    }
+
+    /** 在界面右上方挂一个「整理」按钮（背包和箱子等容器界面都会加）。 */
+    static void addButton(AbstractContainerScreen<?> screen) {
+        if (!TweakRoll.config().sortInventory || !TweakRoll.config().sortButton) {
+            return;
+        }
+        if (pickSlots(screen.getMenu()).length == 0) {
+            return;
+        }
+        int width = ScreenBridge.imageWidth(screen);
+        int x = ScreenBridge.leftPos(screen) + width - 40;
+        int y = Math.max(2, ScreenBridge.topPos(screen) - 18);
+        Button button = Button.builder(Component.translatable("tweakroll.button.sort"),
+                        pressed -> trigger(screen))
+                .bounds(x, y, 38, 16)
+                .build();
+        ScreenBridge.addWidget(screen, button);
     }
 
     /**

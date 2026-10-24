@@ -1,5 +1,7 @@
 package com.tweakroll;
 
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
@@ -17,7 +19,9 @@ final class ScreenBridge {
     private static Field leftPosField;
     private static Field topPosField;
     private static Field hoveredSlotField;
+    private static Field imageWidthField;
     private static Method slotClickedMethod;
+    private static Method addRenderableWidgetMethod;
     private static boolean ready;
 
     private ScreenBridge() {
@@ -31,12 +35,15 @@ final class ScreenBridge {
             leftPosField = AbstractContainerScreen.class.getDeclaredField("leftPos");
             topPosField = AbstractContainerScreen.class.getDeclaredField("topPos");
             hoveredSlotField = AbstractContainerScreen.class.getDeclaredField("hoveredSlot");
+            imageWidthField = AbstractContainerScreen.class.getDeclaredField("imageWidth");
             slotClickedMethod = AbstractContainerScreen.class.getDeclaredMethod(
                     "slotClicked", Slot.class, int.class, int.class, ContainerInput.class);
-            for (Field field : new Field[]{leftPosField, topPosField, hoveredSlotField}) {
+            addRenderableWidgetMethod = Screen.class.getDeclaredMethod("addRenderableWidget", GuiEventListener.class);
+            for (Field field : new Field[]{leftPosField, topPosField, hoveredSlotField, imageWidthField}) {
                 field.setAccessible(true);
             }
             slotClickedMethod.setAccessible(true);
+            addRenderableWidgetMethod.setAccessible(true);
             ready = true;
         } catch (Throwable throwable) {
             Log.error("无法访问容器界面成员，整理功能将被禁用", throwable);
@@ -61,6 +68,23 @@ final class ScreenBridge {
             return topPosField.getInt(screen);
         } catch (Throwable throwable) {
             return 0;
+        }
+    }
+
+    static int imageWidth(AbstractContainerScreen<?> screen) {
+        try {
+            return imageWidthField.getInt(screen);
+        } catch (Throwable throwable) {
+            return 176;
+        }
+    }
+
+    /** 往界面里加控件：{@code addRenderableWidget} 是 protected，只能反射调。 */
+    static void addWidget(Screen screen, GuiEventListener widget) {
+        try {
+            addRenderableWidgetMethod.invoke(screen, widget);
+        } catch (Throwable throwable) {
+            Log.error("添加整理按钮失败", throwable);
         }
     }
 
