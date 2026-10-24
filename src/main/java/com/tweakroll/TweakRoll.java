@@ -89,6 +89,7 @@ public final class TweakRoll implements ClientModInitializer {
                 InventoryTweaks.tickSweep(container);
             }
             InventorySorter.tick(client);
+            SortButton.tick(client);
         });
 
         Log.info("已加载，按 O 打开设置。");
