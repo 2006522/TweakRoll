@@ -26,7 +26,10 @@ public final class Config {
     /** 容器界面里"整理背包"那颗按钮的位置（Integer.MIN_VALUE = 自动贴在面板底部）。 */
     public int sortBagButtonDx = Integer.MIN_VALUE;
     public int sortBagButtonDy = Integer.MIN_VALUE;
-    /** 创造模式背包里「整理」按钮的位置（默认放在面板左侧，别压住丢弃槽）。 */
+    /**
+     * 创造模式「物品栏」页里整理按钮的位置。
+     * 默认贴面板左侧外面：面板右边那两列标签页会盖住放在右侧的按钮。
+     */
     public int sortCreativeDx = -42;
     public int sortCreativeDy = 20;
 

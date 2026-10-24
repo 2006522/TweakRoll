@@ -152,7 +152,8 @@ final class InventoryTweaks {
             return;
         }
         AbstractContainerMenu menu = screen.getMenu();
-        ScreenBridge.click(screen, slot, 0, ContainerInput.QUICK_MOVE);
+        // 索引用槽位在 slots 里的位置：创造模式的 SlotWrapper 的 index 字段一直是 0
+        ScreenBridge.click(screen, slot, menu.slots.indexOf(slot), 0, ContainerInput.QUICK_MOVE);
         // 触发后光标应保持为空，否则说明这次点击没能走通
         if (!menu.getCarried().isEmpty()) {
             Log.warn("快速移动后光标仍有物品，可能未生效");

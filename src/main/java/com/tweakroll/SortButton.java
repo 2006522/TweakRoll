@@ -31,12 +31,16 @@ public final class SortButton {
 
     private static final int KIND_PRIMARY = 0;
     private static final int KIND_BAG = 1;
+    private static final int KIND_CREATIVE = 2;
 
     /** 按界面分组：创造模式和生存背包会同时存在，不能共用一个全局列表。 */
     private static final Map<Screen, List<SortButton>> ACTIVE = new WeakHashMap<>();
 
     private final AbstractContainerScreen<?> screen;
+    /** 固定要整理的槽位；{@link #dynamic} 为 true 时不用它。 */
     private final int[] slots;
+    /** 创造模式的槽位随标签页变化，只能在点击的那一刻现算。 */
+    private final boolean dynamic;
     private final int kind;
     private Button widget;
 
@@ -53,6 +57,14 @@ public final class SortButton {
         this.screen = screen;
         this.slots = slots;
         this.kind = kind;
+        this.dynamic = false;
+    }
+
+    private SortButton(AbstractContainerScreen<?> screen, int kind) {
+        this.screen = screen;
+        this.slots = new int[0];
+        this.kind = kind;
+        this.dynamic = true;
     }
 
     /** 界面初始化时调一次：算出要整理的槽位并挂上按钮。 */
@@ -65,8 +77,11 @@ public final class SortButton {
         int[] containerSlots = InventorySorter.containerSlots(screen.getMenu());
         int[] bagSlots = InventorySorter.bagSlots(screen.getMenu());
 
-        // 创造模式物品栏不加按钮（只在生存模式的背包 / 容器界面出现）
+        // 创造模式：只在「物品栏」页放一颗整理背包的按钮，其他分类页不放。
+        // 槽位不能在这里算死——切标签页会重建菜单里的槽位表，只有 INVENTORY 页
+        // 才有对应的玩家背包槽，所以改成点击时现算（dynamic）。
         if (screen instanceof CreativeModeInventoryScreen) {
+            add(new SortButton(screen, KIND_CREATIVE), "tweakroll.button.sort");
             return;
         }
         if (screen.getMenu() instanceof InventoryMenu) {
@@ -85,26 +100,67 @@ public final class SortButton {
 
     private static void add(SortButton button, String labelKey) {
         List<SortButton> list = ACTIVE.computeIfAbsent(button.screen, key -> new ArrayList<>());
-        button.widget = Button.builder(Component.translatable(labelKey),
-                        pressed -> InventorySorter.trigger(button.screen, button.slots))
+        button.widget = Button.builder(Component.translatable(labelKey), pressed -> button.run())
                 .bounds(0, 0, WIDTH, HEIGHT)
                 .build();
         button.place();
+        button.refreshVisible();
         ScreenBridge.addWidget(button.screen, button.widget);
         list.add(button);
         Log.info("整理按钮已挂载：" + button.screen.getClass().getSimpleName()
                 + " pos=" + button.widget.getX() + "," + button.widget.getY());
     }
 
+    /** 点按钮（或按键）时真正要整理的槽位。 */
+    private void run() {
+        int[] target = resolveSlots();
+        if (target.length == 0) {
+            return;
+        }
+        InventorySorter.trigger(screen, target);
+    }
+
+    private int[] resolveSlots() {
+        return dynamic ? InventorySorter.bagSlots(screen.getMenu()) : slots;
+    }
+
+    /**
+     * 创造模式的「物品栏」页才显示按钮。
+     *
+     * <p>{@code CreativeModeInventoryScreen.isInventoryOpen()} 是公开方法，
+     * 内部比较的就是 {@code selectedTab.getType() == Type.INVENTORY}，比反射拿
+     * {@code selectedTab} 再和注册表里的实例做 {@code ==} 稳得多。</p>
+     */
+    private void refreshVisible() {
+        if (widget == null) {
+            return;
+        }
+        widget.setVisible(kind != KIND_CREATIVE || creativeInventoryOpen(screen));
+    }
+
+    private static boolean creativeInventoryOpen(Screen screen) {
+        return !(screen instanceof CreativeModeInventoryScreen creative) || creative.isInventoryOpen();
+    }
+
     // ---------------------------------------------------------------- 定时维护
 
-    /** 每个客户端 tick 调一次：拖动跟随、位置重算、被界面清掉就补挂。 */
+    /** 每个客户端 tick 调一次：拖动跟随、位置重算、显隐刷新、被界面清掉就补挂。 */
     static void tick(Minecraft client) {
-        for (List<SortButton> list : ACTIVE.values()) {
-            for (SortButton button : list) {
+        Screen current = client.gui == null ? null : client.gui.screen();
+        var iterator = ACTIVE.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Screen, List<SortButton>> entry = iterator.next();
+            // 界面已经关掉了：清掉记录，别再去动那个界面的控件列表
+            if (entry.getKey() != current && entry.getValue().stream().noneMatch(button -> button.dragging)) {
+                iterator.remove();
+                continue;
+            }
+            for (SortButton button : entry.getValue()) {
                 if (button.widget == null) {
                     continue;
                 }
+                // 创造模式切标签页时也要跟着刷新显隐
+                button.refreshVisible();
                 // 被界面重建清掉时补挂回来
                 if (!button.dragging && !ScreenBridge.isRegistered(button.screen, button.widget)) {
                     ScreenBridge.addWidget(button.screen, button.widget);
@@ -127,6 +183,8 @@ public final class SortButton {
             return true;
         }
         for (SortButton button : buttonsOf(s)) {
+            // 切标签页后要等一个 tick 才刷新，按下时再确认一次，避免点到已隐藏的按钮
+            button.refreshVisible();
             if (button.widget != null && button.widget.isVisible()
                     && button.widget.isMouseOver(event.x(), event.y())) {
                 button.startDrag(event.x(), event.y());
@@ -195,7 +253,7 @@ public final class SortButton {
         follow();
         dragging = false;
         if (!moved) {
-            InventorySorter.trigger(screen, slots);
+            run();
             return;
         }
         Config config = TweakRoll.config();
@@ -205,6 +263,10 @@ public final class SortButton {
             case KIND_BAG -> {
                 config.sortBagButtonDx = dx;
                 config.sortBagButtonDy = dy;
+            }
+            case KIND_CREATIVE -> {
+                config.sortCreativeDx = dx;
+                config.sortCreativeDy = dy;
             }
             default -> {
                 config.sortButtonDx = dx;
@@ -235,6 +297,10 @@ public final class SortButton {
                 dx = config.sortBagButtonDx;
                 dy = config.sortBagButtonDy;
             }
+            case KIND_CREATIVE -> {
+                dx = config.sortCreativeDx;
+                dy = config.sortCreativeDy;
+            }
             default -> {
                 dx = config.sortButtonDx;
                 dy = config.sortButtonDy;
@@ -254,6 +320,10 @@ public final class SortButton {
     }
 
     private String kindName() {
-        return kind == KIND_BAG ? "背包" : "主";
+        return switch (kind) {
+            case KIND_BAG -> "背包";
+            case KIND_CREATIVE -> "创造";
+            default -> "主";
+        };
     }
 }

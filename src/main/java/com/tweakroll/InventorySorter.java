@@ -107,16 +107,21 @@ final class InventorySorter {
 
     /**
      * 容器自己那几格（箱子 / 木桶 / 潜影盒 / 发射器 / 漏斗）。
-     * 玩家背包和快捷栏的底层容器是 {@link Inventory}，其余就是容器自己的。
+     * 玩家背包和快捷栏的底层容器是 {@link Inventory}，其余的就是容器自己的。
+     *
+     * <p>返回的是槽位在 {@code menu.slots} 里的<b>位置</b>，不是 {@code slot.index}。
+     * 普通菜单里两者相同（{@code addSlot} 会把 index 设成列表长度），
+     * 但创造模式「物品栏」页把 {@code SlotWrapper} 直接塞进列表、绕过了 addSlot，
+     * 那些槽的 index 全是 0。</p>
      */
     static int[] containerSlots(AbstractContainerMenu menu) {
         if (menu instanceof InventoryMenu || !isStorageMenu(menu)) {
             return new int[0];
         }
         List<Integer> list = new ArrayList<>();
-        for (Slot slot : menu.slots) {
-            if (!(slot.container instanceof Inventory)) {
-                list.add(slot.index);
+        for (int position = 0; position < menu.slots.size(); position++) {
+            if (!(menu.slots.get(position).container instanceof Inventory)) {
+                list.add(position);
             }
         }
         return toArray(list);
@@ -135,11 +140,12 @@ final class InventorySorter {
             return bag;
         }
         List<Integer> list = new ArrayList<>();
-        for (Slot slot : menu.slots) {
+        for (int position = 0; position < menu.slots.size(); position++) {
+            Slot slot = menu.slots.get(position);
             if (slot.container instanceof Inventory
                     && slot.getContainerSlot() >= BAG_FIRST
                     && slot.getContainerSlot() <= BAG_LAST) {
-                list.add(slot.index);
+                list.add(position);
             }
         }
         return toArray(list);
@@ -350,7 +356,8 @@ final class InventorySorter {
             }
             Slot slot = index < target.getMenu().slots.size() ? target.getMenu().slots.get(index) : null;
             if (slot != null) {
-                ScreenBridge.click(target, slot, 0);
+                // 用槽位在 slots 里的位置当索引：SlotWrapper（创造模式）的 index 字段是 0
+                ScreenBridge.click(target, slot, index, 0);
             }
         }
         if (QUEUE.isEmpty()) {

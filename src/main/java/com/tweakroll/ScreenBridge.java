@@ -124,18 +124,22 @@ final class ScreenBridge {
 
     /**
      * 走原版 {@code slotClicked}，这样创造模式背包等重写过的界面也能正确响应。
+     *
+     * <p>索引必须由调用方传：创造模式「物品栏」页里的槽位是 {@code SlotWrapper}，
+     * 是被直接塞进 {@code menu.slots} 的（没走 {@code addSlot}），
+     * {@code slot.index} 一直是 0，用它点就会永远点在第一个格子上。</p>
      */
-    static void click(AbstractContainerScreen<?> screen, Slot slot, int button) {
-        click(screen, slot, button, ContainerInput.PICKUP);
+    static void click(AbstractContainerScreen<?> screen, Slot slot, int index, int button) {
+        click(screen, slot, index, button, ContainerInput.PICKUP);
     }
 
-    static void click(AbstractContainerScreen<?> screen, Slot slot, int button, ContainerInput input) {
+    static void click(AbstractContainerScreen<?> screen, Slot slot, int index, int button, ContainerInput input) {
         if (slot == null) {
             return;
         }
         try {
             // Method.invoke 会走虚分派，因此 CreativeModeInventoryScreen 的重写依然生效
-            slotClickedMethod.invoke(screen, slot, slot.index, button, input);
+            slotClickedMethod.invoke(screen, slot, index, button, input);
         } catch (Throwable throwable) {
             Log.error("模拟点击失败", throwable);
         }
