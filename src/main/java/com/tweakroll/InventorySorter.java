@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -82,7 +83,8 @@ final class InventorySorter {
             Log.info("这个界面没有可整理的格子");
             return true;
         }
-        if (TweakRoll.config().instantSort && sortOnServer(slots)) {
+        if (!(container instanceof CreativeModeInventoryScreen)
+                && TweakRoll.config().instantSort && sortOnServer(slots)) {
             return true;
         }
         return startClickSort(container, slots);
@@ -177,6 +179,7 @@ final class InventorySorter {
             }
             AbstractContainerMenu menu = player.containerMenu;
             if (slots.length == 0 || slots[slots.length - 1] >= menu.slots.size()) {
+                Log.info("服务端整理跳过：槽位与服务端菜单不匹配（" + slots.length + " 格）");
                 return;
             }
             ItemStack[] current = read(menu, slots);

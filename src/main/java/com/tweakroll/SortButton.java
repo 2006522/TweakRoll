@@ -174,6 +174,7 @@ public final class SortButton {
             if (button.isShown() && button.contains(event.x(), event.y())) {
                 button.placeIfNeeded();
                 button.startDrag(event.x(), event.y());
+                Log.info("按钮按下：" + s.getClass().getSimpleName() + " 位置 " + (int) event.x() + "," + (int) event.y());
                 return false;
             }
         }
