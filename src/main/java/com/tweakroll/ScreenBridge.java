@@ -21,6 +21,7 @@ final class ScreenBridge {
     private static Field hoveredSlotField;
     private static Field imageWidthField;
     private static Field imageHeightField;
+    private static Field renderablesField;
     private static Method slotClickedMethod;
     private static Method addRenderableWidgetMethod;
     private static boolean ready;
@@ -38,10 +39,12 @@ final class ScreenBridge {
             hoveredSlotField = AbstractContainerScreen.class.getDeclaredField("hoveredSlot");
             imageWidthField = AbstractContainerScreen.class.getDeclaredField("imageWidth");
             imageHeightField = AbstractContainerScreen.class.getDeclaredField("imageHeight");
+            renderablesField = Screen.class.getDeclaredField("renderables");
             slotClickedMethod = AbstractContainerScreen.class.getDeclaredMethod(
                     "slotClicked", Slot.class, int.class, int.class, ContainerInput.class);
             addRenderableWidgetMethod = Screen.class.getDeclaredMethod("addRenderableWidget", GuiEventListener.class);
-            for (Field field : new Field[]{leftPosField, topPosField, hoveredSlotField, imageWidthField, imageHeightField}) {
+            for (Field field : new Field[]{leftPosField, topPosField, hoveredSlotField, imageWidthField, imageHeightField,
+                    renderablesField}) {
                 field.setAccessible(true);
             }
             slotClickedMethod.setAccessible(true);
@@ -86,6 +89,19 @@ final class ScreenBridge {
             return imageHeightField.getInt(screen);
         } catch (Throwable throwable) {
             return 166;
+        }
+    }
+
+    /**
+     * 这个控件还在界面的渲染列表里吗？
+     * 创造模式切换标签页会重建控件列表，可能把我们加的按钮清掉而没有重新触发初始化。
+     */
+    static boolean isRegistered(Screen screen, Object widget) {
+        try {
+            Object list = renderablesField.get(screen);
+            return !(list instanceof java.util.List<?> items) || items.contains(widget);
+        } catch (Throwable throwable) {
+            return true; // 读不到就当已注册，避免重复添加
         }
     }
 

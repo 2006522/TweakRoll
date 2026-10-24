@@ -148,6 +148,14 @@ public final class SortButton {
             for (SortButton button : list) {
                 if (button.kind == KIND_CREATIVE && button.widget != null) {
                     boolean show = creativeInventoryOpen(button.screen);
+                    if (show && !ScreenBridge.isRegistered(button.screen, button.widget)) {
+                        // 切标签页后界面重建了控件列表，把按钮补挂回去
+                        ScreenBridge.addWidget(button.screen, button.widget);
+                        Log.info("整理按钮被界面清掉，已重新挂载");
+                    }
+                    if (button.widget.isVisible() != show) {
+                        Log.info("整理按钮显示状态 -> " + show);
+                    }
                     button.widget.setVisible(show);
                     if (!show) {
                         button.dragging = false;
