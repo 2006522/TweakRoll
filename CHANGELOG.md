@@ -1,5 +1,14 @@
 # 更新日志
 
+## v1.9.8
+
+修复创造模式里「整理」按钮**看不见但点得到**（拖动能保存、点它也在整理，就是屏幕上没有）。
+
+- 原因：绘制挂在 `AbstractContainerScreen.extractRenderState` 的末尾，
+  但创造模式会在调完父类之后**再画一遍面板、标签页和物品**，正好把按钮盖住。
+- 改挂在更外层的 `Screen.extractRenderStateWithTooltipAndSubtitles` 末尾
+  （新增 `ScreenRenderMixin`），所有界面统一、不会被任何界面内容压住。
+
 ## v1.9.7
 
 创造模式切标签页后按钮消失 —— 彻底不再依赖界面控件系统。

@@ -6,7 +6,8 @@
   "client": [
     "ContainerScreenMixin",
     "ContainerScreenMouseMixin",
-    "CreativeScreenMouseMixin"
+    "CreativeScreenMouseMixin",
+    "ScreenRenderMixin"
   ],
   "injectors": {
     "defaultRequire": 0
