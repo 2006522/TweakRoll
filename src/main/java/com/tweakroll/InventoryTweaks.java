@@ -118,7 +118,8 @@ final class InventoryTweaks {
 
     /** 扫过转移的实际处理：同一格不重复触发，按下的第一格交给原版。 */
     private static void sweepAt(AbstractContainerScreen<?> screen, Slot slot) {
-        if (!TweakRoll.config().shiftHoverMove || !ScreenBridge.isReady()) {
+        // 只支持单人存档
+        if (!TweakRoll.config().shiftHoverMove || !ScreenBridge.isReady() || !InventorySorter.supported()) {
             resetSweep();
             return;
         }

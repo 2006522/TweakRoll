@@ -15,8 +15,6 @@ public final class Config {
     public boolean shiftHoverMove = true;
     /** R 键一键整理背包（合并堆叠 + 按物品排序）。 */
     public boolean sortInventory = true;
-    /** 单人游戏时瞬间整理（不模拟点击，直接生效）。 */
-    public boolean instantSort = true;
     /** 在背包/箱子界面显示「整理」按钮。 */
     public boolean sortButton = true;
     /** 整理按钮相对面板右边缘的水平偏移（可以拖动按钮来改）。 */
@@ -51,7 +49,6 @@ public final class Config {
         }
         shiftHoverMove = readBoolean(properties, "shiftHoverMove", shiftHoverMove);
         sortInventory = readBoolean(properties, "sortInventory", sortInventory);
-        instantSort = readBoolean(properties, "instantSort", instantSort);
         sortButton = readBoolean(properties, "sortButton", sortButton);
         sortButtonDx = readInt(properties, "sortButtonDx", sortButtonDx);
         sortButtonDy = readInt(properties, "sortButtonDy", sortButtonDy);
@@ -65,7 +62,6 @@ public final class Config {
         Properties properties = new Properties();
         properties.setProperty("shiftHoverMove", Boolean.toString(shiftHoverMove));
         properties.setProperty("sortInventory", Boolean.toString(sortInventory));
-        properties.setProperty("instantSort", Boolean.toString(instantSort));
         properties.setProperty("sortButton", Boolean.toString(sortButton));
         properties.setProperty("sortButtonDx", Integer.toString(sortButtonDx));
         properties.setProperty("sortButtonDy", Integer.toString(sortButtonDy));

@@ -29,8 +29,8 @@ import java.util.List;
  * R 键一键整理：背包界面整理背包 27 格，箱子/木桶/潜影盒/发射器/漏斗界面整理容器那一块。
  *
  * <p>只整理"存储区"：玩家背包区或容器槽位，不碰快捷栏、盔甲、合成格、结果格。
- * 做法是先用本地模型算出完整的点击序列（合并堆叠 + 链式归位），再逐 tick 发出去；
- * 单人游戏则直接在服务端改数据，连点击都省了。</p>
+ * 单人存档里直接改集成服务器的数据，一次到位；创造模式的物品栏页由客户端接管，
+ * 那里改成先算好点击序列再逐 tick 发出去。</p>
  */
 final class InventorySorter {
     /** InventoryMenu 里背包区的槽位范围（0~4 合成、5~8 盔甲、9~35 背包、36~44 快捷栏）。 */
@@ -72,6 +72,10 @@ final class InventorySorter {
 
     /** 真正开始整理：按键和界面按钮都走这里。 */
     static boolean trigger(AbstractContainerScreen<?> container, int[] slots) {
+        // 只支持单人存档：需要直接读写集成服务器的容器
+        if (!supported()) {
+            return false;
+        }
         // 正在整理时再按一次就当取消
         if (!QUEUE.isEmpty()) {
             QUEUE.clear();
@@ -83,8 +87,8 @@ final class InventorySorter {
             Log.info("这个界面没有可整理的格子");
             return true;
         }
-        if (!(container instanceof CreativeModeInventoryScreen)
-                && TweakRoll.config().instantSort && sortOnServer(slots)) {
+        // 创造模式物品栏页的菜单由客户端接管，只能走点击
+        if (!(container instanceof CreativeModeInventoryScreen) && sortOnServer(slots)) {
             return true;
         }
         return startClickSort(container, slots);
@@ -97,12 +101,6 @@ final class InventorySorter {
         }
         int[] container = containerSlots(menu);
         return container.length > 0 ? container : bagSlots(menu);
-    }
-
-    /** 这个界面有没有可整理的槽位（决定要不要显示按钮）。 */
-    static boolean canSort(AbstractContainerScreen<?> screen) {
-        return TweakRoll.config().sortInventory
-                && (containerSlots(screen.getMenu()).length > 0 || bagSlots(screen.getMenu()).length > 0);
     }
 
     /**
@@ -167,7 +165,13 @@ final class InventorySorter {
                 || menu instanceof HopperMenu;
     }
 
-    /** 单人游戏专用：直接在集成服务器的容器里改内容，再整体同步一次。 */
+    /** 只有单人存档能用（需要直接改集成服务器的容器内容）。 */
+    static boolean supported() {
+        Minecraft client = Minecraft.getInstance();
+        return client != null && client.hasSingleplayerServer() && client.getSingleplayerServer() != null;
+    }
+
+    /** 单人存档：直接在集成服务器的容器里改内容，再整体同步一次。 */
     private static boolean sortOnServer(int[] slots) {
         Minecraft client = Minecraft.getInstance();
         if (!client.hasSingleplayerServer()) {
@@ -185,7 +189,7 @@ final class InventorySorter {
             }
             AbstractContainerMenu menu = player.containerMenu;
             if (slots.length == 0 || slots[slots.length - 1] >= menu.slots.size()) {
-                Log.info("服务端整理跳过：槽位与服务端菜单不匹配（" + slots.length + " 格）");
+                Log.info("整理跳过：槽位与菜单不匹配（" + slots.length + " 格）");
                 return;
             }
             ItemStack[] current = read(menu, slots);
@@ -205,7 +209,7 @@ final class InventorySorter {
         return true;
     }
 
-    /** 多人服务器上只能模拟点击：把算好的点击序列排队，逐 tick 发出去。 */
+    /** 创造模式物品栏页：把算好的点击序列排队，逐 tick 发出去。 */
     private static boolean startClickSort(AbstractContainerScreen<?> screen, int[] slots) {
         if (!ScreenBridge.isReady()) {
             return false;
@@ -364,10 +368,6 @@ final class InventorySorter {
             target = null;
             Log.info("整理完成");
         }
-    }
-
-    static boolean isSorting() {
-        return !QUEUE.isEmpty();
     }
 
     private static ItemStack[] read(AbstractContainerMenu menu, int[] slots) {
