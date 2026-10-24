@@ -7,5 +7,7 @@
   "tweakroll.value.on": "ON",
   "tweakroll.value.off": "OFF",
   "tweakroll.option.instant_sort": "Instant sort in singleplayer",
-  "tweakroll.button.sort": "Sort"
+  "tweakroll.button.sort": "Sort",
+  "tweakroll.button.sort_container": "Chest",
+  "tweakroll.button.sort_bag": "Bag"
 }

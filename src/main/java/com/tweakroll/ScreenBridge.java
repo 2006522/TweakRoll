@@ -20,6 +20,7 @@ final class ScreenBridge {
     private static Field topPosField;
     private static Field hoveredSlotField;
     private static Field imageWidthField;
+    private static Field imageHeightField;
     private static Method slotClickedMethod;
     private static Method addRenderableWidgetMethod;
     private static boolean ready;
@@ -36,10 +37,11 @@ final class ScreenBridge {
             topPosField = AbstractContainerScreen.class.getDeclaredField("topPos");
             hoveredSlotField = AbstractContainerScreen.class.getDeclaredField("hoveredSlot");
             imageWidthField = AbstractContainerScreen.class.getDeclaredField("imageWidth");
+            imageHeightField = AbstractContainerScreen.class.getDeclaredField("imageHeight");
             slotClickedMethod = AbstractContainerScreen.class.getDeclaredMethod(
                     "slotClicked", Slot.class, int.class, int.class, ContainerInput.class);
             addRenderableWidgetMethod = Screen.class.getDeclaredMethod("addRenderableWidget", GuiEventListener.class);
-            for (Field field : new Field[]{leftPosField, topPosField, hoveredSlotField, imageWidthField}) {
+            for (Field field : new Field[]{leftPosField, topPosField, hoveredSlotField, imageWidthField, imageHeightField}) {
                 field.setAccessible(true);
             }
             slotClickedMethod.setAccessible(true);
@@ -76,6 +78,14 @@ final class ScreenBridge {
             return imageWidthField.getInt(screen);
         } catch (Throwable throwable) {
             return 176;
+        }
+    }
+
+    static int imageHeight(AbstractContainerScreen<?> screen) {
+        try {
+            return imageHeightField.getInt(screen);
+        } catch (Throwable throwable) {
+            return 166;
         }
     }
 

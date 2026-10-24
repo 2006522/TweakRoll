@@ -66,11 +66,11 @@ final class InventorySorter {
             return true;
         }
         lastSortMillis = now;
-        return trigger(container);
+        return trigger(container, defaultSlots(container.getMenu()));
     }
 
     /** 真正开始整理：按键和界面按钮都走这里。 */
-    static boolean trigger(AbstractContainerScreen<?> container) {
+    static boolean trigger(AbstractContainerScreen<?> container, int[] slots) {
         // 正在整理时再按一次就当取消
         if (!QUEUE.isEmpty()) {
             QUEUE.clear();
@@ -78,27 +78,53 @@ final class InventorySorter {
             Log.info("整理已取消");
             return true;
         }
-        int[] slots = pickSlots(container.getMenu());
         if (slots.length == 0) {
-            Log.info("这个界面没有可整理的容器");
+            Log.info("这个界面没有可整理的格子");
             return true;
         }
-        if (TweakRoll.config().instantSort && sortOnServer()) {
+        if (TweakRoll.config().instantSort && sortOnServer(slots)) {
             return true;
         }
         return startClickSort(container, slots);
     }
 
+    /** R 键的默认目标：背包界面整理背包，容器界面整理容器。 */
+    private static int[] defaultSlots(AbstractContainerMenu menu) {
+        if (menu instanceof InventoryMenu) {
+            return bagSlots(menu);
+        }
+        int[] container = containerSlots(menu);
+        return container.length > 0 ? container : bagSlots(menu);
+    }
+
     /** 这个界面有没有可整理的槽位（决定要不要显示按钮）。 */
     static boolean canSort(AbstractContainerScreen<?> screen) {
-        return TweakRoll.config().sortInventory && pickSlots(screen.getMenu()).length > 0;
+        return TweakRoll.config().sortInventory
+                && (containerSlots(screen.getMenu()).length > 0 || bagSlots(screen.getMenu()).length > 0);
     }
 
     /**
-     * 挑出要整理的槽位（菜单索引）。
-     * 背包界面只取 9~35；箱子等容器界面取"不属于玩家背包"的槽位。
+     * 容器自己那几格（箱子 / 木桶 / 潜影盒 / 发射器 / 漏斗）。
+     * 玩家背包和快捷栏的底层容器是 {@link Inventory}，其余就是容器自己的。
      */
-    private static int[] pickSlots(AbstractContainerMenu menu) {
+    static int[] containerSlots(AbstractContainerMenu menu) {
+        if (menu instanceof InventoryMenu || !isStorageMenu(menu)) {
+            return new int[0];
+        }
+        List<Integer> list = new ArrayList<>();
+        for (Slot slot : menu.slots) {
+            if (!(slot.container instanceof Inventory)) {
+                list.add(slot.index);
+            }
+        }
+        return toArray(list);
+    }
+
+    /**
+     * 玩家背包那 27 格（不含快捷栏）。
+     * 背包界面固定是 9~35；容器界面里挑 containerSlot 落在 9~35 的玩家槽位。
+     */
+    static int[] bagSlots(AbstractContainerMenu menu) {
         if (menu instanceof InventoryMenu) {
             int[] bag = new int[BAG_SIZE];
             for (int i = 0; i < BAG_SIZE; i++) {
@@ -106,16 +132,18 @@ final class InventorySorter {
             }
             return bag;
         }
-        if (!isStorageMenu(menu)) {
-            return new int[0];
-        }
         List<Integer> list = new ArrayList<>();
         for (Slot slot : menu.slots) {
-            // 玩家背包/快捷栏的容器是 Inventory，箱子等是方块实体自己的容器
-            if (!(slot.container instanceof Inventory)) {
+            if (slot.container instanceof Inventory
+                    && slot.getContainerSlot() >= BAG_FIRST
+                    && slot.getContainerSlot() <= BAG_LAST) {
                 list.add(slot.index);
             }
         }
+        return toArray(list);
+    }
+
+    private static int[] toArray(List<Integer> list) {
         int[] result = new int[list.size()];
         for (int i = 0; i < result.length; i++) {
             result[i] = list.get(i);
@@ -132,7 +160,7 @@ final class InventorySorter {
     }
 
     /** 单人游戏专用：直接在集成服务器的容器里改内容，再整体同步一次。 */
-    private static boolean sortOnServer() {
+    private static boolean sortOnServer(int[] slots) {
         Minecraft client = Minecraft.getInstance();
         if (!client.hasSingleplayerServer()) {
             return false;
@@ -148,8 +176,7 @@ final class InventorySorter {
                 return;
             }
             AbstractContainerMenu menu = player.containerMenu;
-            int[] slots = pickSlots(menu);
-            if (slots.length == 0) {
+            if (slots.length == 0 || slots[slots.length - 1] >= menu.slots.size()) {
                 return;
             }
             ItemStack[] current = read(menu, slots);
