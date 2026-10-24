@@ -1,5 +1,14 @@
 # 更新日志
 
+## v1.9.5
+
+修复创造模式「物品栏」页按钮**时有时无**。
+
+- 上一版靠反射比较 `selectedTab` 与注册表里的创造标签实例，实例身份在某些时刻对不上（例如标签内容刷新），
+  判定就会抖，按钮跟着闪烁。
+- 改用原版公开方法：`CreativeModeInventoryScreen.isInventoryOpen()`
+  （内部就是 `selectedTab.getType() == CreativeModeTab.Type.INVENTORY`），稳定且不需要反射。
+
 ## v1.9.4
 
 创造模式里「整理」按钮**只在「物品栏」标签页显示**。
