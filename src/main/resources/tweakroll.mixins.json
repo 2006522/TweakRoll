@@ -4,7 +4,8 @@
   "package": "com.tweakroll.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "ContainerScreenMixin"
+    "ContainerScreenMixin",
+    "ContainerScreenMouseMixin"
   ],
   "injectors": {
     "defaultRequire": 0

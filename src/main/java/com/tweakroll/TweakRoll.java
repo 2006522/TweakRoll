@@ -72,10 +72,8 @@ public final class TweakRoll implements ClientModInitializer {
                 // R 键整理背包：KeyMapping 在界面打开时收不到 consumeClick，只能从按键事件里抢
                 ScreenKeyboardEvents.allowKeyPress(screen).register((s, event) ->
                         !InventorySorter.onKeyPress(s, event));
-                // 整理按钮：按住拖动改位置，轻点是执行整理
-                ScreenMouseEvents.allowMouseClick(screen).register(SortButton::onClick);
-                ScreenMouseEvents.allowMouseDrag(screen).register(SortButton::onDrag);
-                ScreenMouseEvents.allowMouseRelease(screen).register(SortButton::onRelease);
+                // 整理按钮的拖动改由 ContainerScreenMouseMixin 接管：
+                // Fabric 的 ScreenMouseEvents 在创造模式背包里收不到事件
             }
         });
 

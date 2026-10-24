@@ -1,5 +1,16 @@
 # 更新日志
 
+## v1.9.1
+
+修复创造模式背包里「整理」按钮拖不动。
+
+- 原因：按钮的按下/拖动/松开原来挂在 Fabric 的 `ScreenMouseEvents` 上，
+  在 `CreativeModeInventoryScreen` 里这些事件收不到 —— 日志里能看到点击穿透到了按钮自己的回调（执行了整理），
+  但拖动完全没反应。
+- 改成 mixin 直接注入 `AbstractContainerScreen` 的 `mouseClicked` / `mouseDragged` / `mouseReleased`，
+  所有容器界面（含创造模式）统一覆盖，不再依赖事件是否派发。
+- 新增一行挂载日志：`整理按钮已挂载：<界面类> pos=x,y`，方便确认按钮位置。
+
 ## v1.9.0
 
 箱子界面里变成**两颗按钮**：上面整理箱子、下面整理背包。

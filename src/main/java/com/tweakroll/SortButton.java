@@ -18,7 +18,7 @@ import java.util.List;
  * <p>按住拖动可以换位置，位置按"相对面板"记在配置里。拖动不用增量累加，
  * 而是记下按下时鼠标相对按钮的偏移，之后按"鼠标位置 - 偏移"重算，所以跟手。</p>
  */
-final class SortButton {
+public final class SortButton {
     private static final int WIDTH = 38;
     private static final int HEIGHT = 16;
     /** 移动超过这么多像素就判定为拖动，而不是点击。 */
@@ -78,10 +78,12 @@ final class SortButton {
         button.place();
         ScreenBridge.addWidget(button.screen, button.widget);
         ACTIVE.add(button);
+        Log.info("整理按钮已挂载：" + button.screen.getClass().getSimpleName()
+                + " pos=" + button.widget.getX() + "," + button.widget.getY());
     }
 
     /** 按下：落在任意一颗按钮上就记拖动起点，并吃掉这次点击。 */
-    static boolean onClick(Screen s, MouseButtonEvent event) {
+    public static boolean onClick(Screen s, MouseButtonEvent event) {
         if (!event.isLeftMouse()) {
             return true;
         }
@@ -96,7 +98,7 @@ final class SortButton {
     }
 
     /** 拖动：立刻跟随。 */
-    static boolean onDrag(Screen s, MouseButtonEvent event, double deltaX, double deltaY) {
+    public static boolean onDrag(Screen s, MouseButtonEvent event, double deltaX, double deltaY) {
         boolean handled = false;
         for (SortButton button : ACTIVE) {
             if (button.dragging && button.screen == s) {
@@ -108,7 +110,7 @@ final class SortButton {
     }
 
     /** 松开：没移动就是点击（执行整理），移动过就保存新位置。 */
-    static boolean onRelease(Screen s, MouseButtonEvent event) {
+    public static boolean onRelease(Screen s, MouseButtonEvent event) {
         boolean handled = false;
         for (SortButton button : ACTIVE) {
             if (button.dragging && button.screen == s) {
