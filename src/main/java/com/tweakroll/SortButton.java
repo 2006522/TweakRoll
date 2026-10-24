@@ -74,10 +74,6 @@ public final class SortButton {
         if (!config.sortInventory || !config.sortButton) {
             return;
         }
-        // 只支持单人存档，其它环境不加按钮
-        if (!InventorySorter.supported()) {
-            return;
-        }
         int[] containerSlots = InventorySorter.containerSlots(screen.getMenu());
         int[] bagSlots = InventorySorter.bagSlots(screen.getMenu());
 

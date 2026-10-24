@@ -2,9 +2,9 @@
 
 **按住 Shift 用左键扫一排，物品栏和背包就换好了。**
 
-给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组，用于**单人存档**。
+给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组，单人存档和联机都能用。
 
-![version](https://img.shields.io/badge/version-1.11.0-blue)
+![version](https://img.shields.io/badge/version-1.12.0-blue)
 ![minecraft](https://img.shields.io/badge/Minecraft-26.4--snapshot--5-3C8527)
 ![loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -46,16 +46,17 @@
 **轻点**＝整理，**按住拖动**＝挪位置（松手自动记住，每颗按钮各记各的位置）。
 整理途中再按一次 `R` 取消。
 
-整理是**瞬间完成**的，不用等物品一个个飞过去。
+整理是**瞬间完成**的，不用等物品一个个飞过去。创造模式的「物品栏」页也一样，
+其它分类页是「能刷出来的物品」，跟背包没有对应关系，所以那里不整理。
 
 ## 下载安装
 
 **① 下载**
 
-[`鼠标手势 (TweakRoll) 1.11.0`](https://github.com/2006522/TweakRoll/releases/download/v1.11.0/TweakRoll-1.11.0.jar)
+[`鼠标手势 (TweakRoll) 1.12.0`](https://github.com/2006522/TweakRoll/releases/download/v1.12.0/TweakRoll-1.12.0.jar)
 
-> 发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.11.0.jar`，
-> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.11.0」。
+> 发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.12.0.jar`，
+> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.12.0」。
 
 **② 前置**：Fabric Loader ≥ 0.19.5 ＋ Fabric API（26.4 版本线，如 `0.164.1+26.4`）＋ Java 25
 
@@ -99,7 +100,8 @@ sortCreativeDy=20
 ## 已知限制
 
 - 只处理标准容器界面；模组自定义槽位布局如果不用 `slot.x/slot.y`，会回退到原版 `hoveredSlot`。
-- **只在单人存档里生效**，连服务器时模组不会动作。
+- 创造模式只有「物品栏」页能整理；建筑方块、搜索等分类页放的是「能刷出来的物品」，不整理。
+- 连别人的服务器时，整理由服务器逐格搬（约 0.6 秒），不会瞬间跳完。
 
 ## 许可证
 

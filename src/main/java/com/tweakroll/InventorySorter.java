@@ -28,9 +28,14 @@ import java.util.List;
 /**
  * R 键一键整理：背包界面整理背包 27 格，箱子/木桶/潜影盒/发射器/漏斗界面整理容器那一块。
  *
- * <p>只整理"存储区"：玩家背包区或容器槽位，不碰快捷栏、盔甲、合成格、结果格。
- * 单人存档里直接改集成服务器的数据，一次到位；创造模式的物品栏页由客户端接管，
- * 那里改成先算好点击序列再逐 tick 发出去。</p>
+ * <p>只整理"存储区"：玩家背包区或容器槽位，不碰快捷栏、盔甲、合成格、结果格。</p>
+ *
+ * <p>能直接改数据就直接改，不改数据才退回模拟点击：</p>
+ * <ul>
+ *   <li>创造模式「物品栏」页：改客户端的 {@code inventoryMenu}，由它的监听器同步给服务器。</li>
+ *   <li>单人存档：改集成服务器里玩家真实菜单的槽位。</li>
+ *   <li>联机服务器：客户端说了不算，只能模拟点击让服务器自己搬。</li>
+ * </ul>
  */
 final class InventorySorter {
     /** InventoryMenu 里背包区的槽位范围（0~4 合成、5~8 盔甲、9~35 背包、36~44 快捷栏）。 */
@@ -72,10 +77,6 @@ final class InventorySorter {
 
     /** 真正开始整理：按键和界面按钮都走这里。 */
     static boolean trigger(AbstractContainerScreen<?> container, int[] slots) {
-        // 只支持单人存档：需要直接读写集成服务器的容器
-        if (!supported()) {
-            return false;
-        }
         // 正在整理时再按一次就当取消
         if (!QUEUE.isEmpty()) {
             QUEUE.clear();
@@ -87,8 +88,7 @@ final class InventorySorter {
             Log.info("这个界面没有可整理的格子");
             return true;
         }
-        // 创造模式物品栏页的菜单由客户端接管，只能走点击
-        if (!(container instanceof CreativeModeInventoryScreen) && sortOnServer(slots)) {
+        if (sortOnServer(container, slots)) {
             return true;
         }
         return startClickSort(container, slots);
@@ -165,14 +165,19 @@ final class InventorySorter {
                 || menu instanceof HopperMenu;
     }
 
-    /** 只有单人存档能用（需要直接改集成服务器的容器内容）。 */
-    static boolean supported() {
-        Minecraft client = Minecraft.getInstance();
-        return client != null && client.hasSingleplayerServer() && client.getSingleplayerServer() != null;
-    }
-
-    /** 单人存档：直接在集成服务器的容器里改内容，再整体同步一次。 */
-    private static boolean sortOnServer(int[] slots) {
+    /**
+     * 直接改数据、不模拟点击。
+     *
+     * <ol>
+     *   <li><b>创造模式「物品栏」页</b>：见 {@link #sortCreative}。</li>
+     *   <li><b>单人存档</b>：改集成服务器里玩家真实菜单的槽位，再整体广播一次。</li>
+     *   <li><b>其它情况</b>（连别人的服务器）：返回 false，退回模拟点击。</li>
+     * </ol>
+     */
+    private static boolean sortOnServer(AbstractContainerScreen<?> container, int[] slots) {
+        if (container instanceof CreativeModeInventoryScreen creative) {
+            return sortCreative(creative, slots);
+        }
         Minecraft client = Minecraft.getInstance();
         if (!client.hasSingleplayerServer()) {
             return false;
@@ -192,24 +197,73 @@ final class InventorySorter {
                 Log.info("整理跳过：槽位与菜单不匹配（" + slots.length + " 格）");
                 return;
             }
-            ItemStack[] current = read(menu, slots);
-            ItemStack[] desired = sortedCopy(current);
-            int changed = 0;
-            for (int i = 0; i < slots.length; i++) {
-                if (!sameStack(current[i], desired[i])) {
-                    menu.slots.get(slots[i]).set(desired[i]);
-                    changed++;
-                }
-            }
-            menu.broadcastChanges();
-            // 只发增量客户端偶尔不刷新，补一次全量
-            menu.broadcastFullState();
-            Log.info("整理完成：改动 " + changed + " 格");
+            Log.info("整理完成：改动 " + applySort(menu, slots) + " 格");
         });
         return true;
     }
 
-    /** 创造模式物品栏页：把算好的点击序列排队，逐 tick 发出去。 */
+    /** 把 {@code menu} 里这些槽位排好；返回真正改动的格数。 */
+    private static int applySort(AbstractContainerMenu menu, int[] slots) {
+        int changed = write(menu, slots);
+        // 只发增量客户端偶尔不刷新，补一次全量
+        menu.broadcastChanges();
+        menu.broadcastFullState();
+        return changed;
+    }
+
+    /** 只把算好的结果写进槽位，不广播；返回真正改动的格数。 */
+    private static int write(AbstractContainerMenu menu, int[] slots) {
+        ItemStack[] current = read(menu, slots);
+        ItemStack[] desired = sortedCopy(current);
+        int changed = 0;
+        for (int i = 0; i < slots.length; i++) {
+            if (!sameStack(current[i], desired[i])) {
+                menu.slots.get(slots[i]).set(desired[i]);
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * 创造模式「物品栏」页：改玩家真实的 {@code inventoryMenu}，靠它的监听器同步到服务器。
+     *
+     * <p>这个世界里 {@code inventoryMenu} 上挂着 {@code CreativeInventoryListener}
+     * （打开创造界面时注册），{@code broadcastChanges()} 触发它就能把改动的槽位
+     * 转成 {@code ServerboundSetCreativeModeSlotPacket}，所以不用一个一个点。
+     * 原版自己的 {@code slotClicked} 整理这一页走的也是
+     * {@code inventoryMenu.clicked(...)} + {@code broadcastChanges()}，同一条路。</p>
+     *
+     * <p>槽位编号：这个页面的槽位是 {@code InventoryMenu} 槽位包了一层 {@code SlotWrapper}，
+     * 位置和编号跟 {@code inventoryMenu} 一一对应，可以直接复用。其它分类页
+     * （建筑方块、搜索……）里是「能刷出来的物品」，跟背包没有任何对应关系，
+     * 所以只有「物品栏」页才整理。</p>
+     */
+    private static boolean sortCreative(CreativeModeInventoryScreen screen, int[] slots) {
+        if (!screen.isInventoryOpen()) {
+            Log.info("创造模式只有「物品栏」页能整理");
+            return true;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null) {
+            return false;
+        }
+        AbstractContainerMenu menu = client.player.inventoryMenu;
+        if (menu == null || slots.length == 0 || slots[slots.length - 1] >= menu.slots.size()) {
+            return false;
+        }
+        int changed = write(menu, slots);
+        if (changed == 0) {
+            Log.info("已经很整齐了");
+            return true;
+        }
+        // 只走 broadcastChanges：它会触发 CreativeInventoryListener 发包
+        menu.broadcastChanges();
+        Log.info("创造模式整理完成：改动 " + changed + " 格");
+        return true;
+    }
+
+    /** 连别人的服务器时用：把算好的点击序列排队，逐 tick 发出去。 */
     private static boolean startClickSort(AbstractContainerScreen<?> screen, int[] slots) {
         if (!ScreenBridge.isReady()) {
             return false;
