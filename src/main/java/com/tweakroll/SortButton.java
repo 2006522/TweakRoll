@@ -1,7 +1,7 @@
 package com.tweakroll;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
@@ -18,9 +18,8 @@ import java.util.WeakHashMap;
  * 界面里的「整理」按钮：背包界面一个（整理背包），箱子等容器界面两个
  * （上面的整理箱子、下面的整理背包），创造模式只在「物品栏」页显示一个。
  *
- * <p><b>自己绘制、自己判定点击</b>，不往界面里加 Button 控件 ——
- * 创造模式切标签页会重建控件列表，加进去的控件会被清掉且不一定补得回来。
- * 绘制挂在 {@code extractRenderState} 末尾，点击挂在三个鼠标方法上。</p>
+ * <p>用原版 {@link Button} 控件，按住拖动可以换位置（位置按"相对面板"记在配置里）。
+ * 拖动不用增量累加，而是记下按下时鼠标相对按钮的偏移，之后按"鼠标位置 - 偏移"重算，所以跟手。</p>
  */
 public final class SortButton {
     private static final int WIDTH = 38;
@@ -34,19 +33,13 @@ public final class SortButton {
     private static final int KIND_BAG = 1;
     private static final int KIND_CREATIVE = 2;
 
-    private static final int COL_BG = 0xFF202020;
-    private static final int COL_BORDER = 0xFFA0A0A0;
-    private static final int COL_TEXT = 0xFFFFFFFF;
-
     /** 按界面分组：创造模式和生存背包会同时存在，不能共用一个全局列表。 */
     private static final Map<Screen, List<SortButton>> ACTIVE = new WeakHashMap<>();
 
     private final AbstractContainerScreen<?> screen;
     private final int[] slots;
     private final int kind;
-    private final String label;
-    private int x;
-    private int y;
+    private Button widget;
 
     private boolean dragging;
     private boolean moved;
@@ -54,17 +47,16 @@ public final class SortButton {
     private double grabOffsetY;
     private double startX;
     private double startY;
-    private int startXCache;
-    private int startYCache;
+    private int startWidgetX;
+    private int startWidgetY;
 
-    private SortButton(AbstractContainerScreen<?> screen, int[] slots, int kind, String label) {
+    private SortButton(AbstractContainerScreen<?> screen, int[] slots, int kind) {
         this.screen = screen;
         this.slots = slots;
         this.kind = kind;
-        this.label = label;
     }
 
-    /** 界面初始化时调一次：算出要整理的槽位和按钮位置。 */
+    /** 界面初始化时调一次：算出要整理的槽位并挂上按钮。 */
     static void attach(AbstractContainerScreen<?> screen) {
         ACTIVE.remove(screen);
         Config config = TweakRoll.config();
@@ -76,83 +68,75 @@ public final class SortButton {
 
         if (screen instanceof CreativeModeInventoryScreen) {
             if (bagSlots.length > 0) {
-                add(new SortButton(screen, bagSlots, KIND_CREATIVE, tr("tweakroll.button.sort")));
+                add(new SortButton(screen, bagSlots, KIND_CREATIVE), "tweakroll.button.sort");
             }
             return;
         }
         if (screen.getMenu() instanceof InventoryMenu) {
             if (bagSlots.length > 0) {
-                add(new SortButton(screen, bagSlots, KIND_PRIMARY, tr("tweakroll.button.sort")));
+                add(new SortButton(screen, bagSlots, KIND_PRIMARY), "tweakroll.button.sort");
             }
             return;
         }
         if (containerSlots.length > 0) {
-            add(new SortButton(screen, containerSlots, KIND_PRIMARY, tr("tweakroll.button.sort_container")));
+            add(new SortButton(screen, containerSlots, KIND_PRIMARY), "tweakroll.button.sort_container");
         }
         if (bagSlots.length > 0) {
-            add(new SortButton(screen, bagSlots, KIND_BAG, tr("tweakroll.button.sort_bag")));
+            add(new SortButton(screen, bagSlots, KIND_BAG), "tweakroll.button.sort_bag");
         }
     }
 
-    private static String tr(String key) {
-        return Component.translatable(key).getString();
-    }
-
-    private static void add(SortButton button) {
-        ACTIVE.computeIfAbsent(button.screen, key -> new ArrayList<>()).add(button);
+    private static void add(SortButton button, String labelKey) {
+        List<SortButton> list = ACTIVE.computeIfAbsent(button.screen, key -> new ArrayList<>());
+        button.widget = Button.builder(Component.translatable(labelKey),
+                        pressed -> InventorySorter.trigger(button.screen, button.slots))
+                .bounds(0, 0, WIDTH, HEIGHT)
+                .build();
         button.place();
+        if (button.kind == KIND_CREATIVE) {
+            button.widget.setVisible(creativeInventoryOpen(button.screen));
+        }
+        ScreenBridge.addWidget(button.screen, button.widget);
+        list.add(button);
+        Log.info("整理按钮已挂载：" + button.screen.getClass().getSimpleName()
+                + " pos=" + button.widget.getX() + "," + button.widget.getY());
     }
 
-    // ---------------------------------------------------------------- 绘制
+    // ---------------------------------------------------------------- 定时维护
 
-    /** 由 mixin 在界面渲染末尾调用。 */
-    public static void render(Screen screen, GuiGraphicsExtractor g) {
-        List<SortButton> buttons = ACTIVE.get(screen);
-        if (buttons == null || buttons.isEmpty()) {
-            return;
-        }
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.font == null) {
-            return;
-        }
-        for (SortButton button : buttons) {
-            if (!button.isShown()) {
-                continue;
-            }
-            button.placeIfNeeded();
-            int bx = button.x;
-            int by = button.y;
-            g.fill(bx, by, bx + WIDTH, by + HEIGHT, COL_BG);
-            g.fill(bx, by, bx + WIDTH, by + 1, COL_BORDER);
-            g.fill(bx, by + HEIGHT - 1, bx + WIDTH, by + HEIGHT, COL_BORDER);
-            g.fill(bx, by, bx + 1, by + HEIGHT, COL_BORDER);
-            g.fill(bx + WIDTH - 1, by, bx + WIDTH, by + HEIGHT, COL_BORDER);
-            int textWidth = client.font.width(button.label);
-            g.text(client.font, Component.literal(button.label),
-                    bx + (WIDTH - textWidth) / 2, by + 4, COL_TEXT);
-        }
-    }
-
-    /** 每个客户端 tick 调一次：拖动跟随 + 界面尺寸变化时重算位置。 */
+    /** 每个客户端 tick 调一次：拖动跟随、位置重算、被界面清掉就补挂。 */
     static void tick(Minecraft client) {
         for (List<SortButton> list : ACTIVE.values()) {
             for (SortButton button : list) {
-                if (!button.isShown()) {
-                    button.dragging = false;
+                if (button.widget == null) {
                     continue;
+                }
+                if (button.kind == KIND_CREATIVE) {
+                    boolean show = creativeInventoryOpen(button.screen);
+                    if (show && !button.dragging && !ScreenBridge.isRegistered(button.screen, button.widget)) {
+                        ScreenBridge.addWidget(button.screen, button.widget);
+                        Log.info("整理按钮被界面清掉，已重新挂载");
+                    }
+                    if (button.widget.isVisible() != show) {
+                        Log.info("整理按钮显示状态 -> " + show);
+                    }
+                    button.widget.setVisible(show);
+                    if (!show) {
+                        button.dragging = false;
+                        continue;
+                    }
                 }
                 if (button.dragging) {
                     button.follow();
+                } else {
+                    button.place();
                 }
             }
         }
     }
 
     /** 创造模式只在「物品栏」那一页显示（原版公开方法 `isInventoryOpen()`）。 */
-    private boolean isShown() {
-        if (kind != KIND_CREATIVE) {
-            return true;
-        }
+    private static boolean creativeInventoryOpen(AbstractContainerScreen<?> screen) {
         if (screen instanceof CreativeModeInventoryScreen creative) {
             try {
                 return creative.isInventoryOpen();
@@ -171,10 +155,11 @@ public final class SortButton {
             return true;
         }
         for (SortButton button : buttonsOf(s)) {
-            if (button.isShown() && button.contains(event.x(), event.y())) {
-                button.placeIfNeeded();
+            if (button.widget != null && button.widget.isVisible()
+                    && button.widget.isMouseOver(event.x(), event.y())) {
                 button.startDrag(event.x(), event.y());
-                Log.info("按钮按下：" + s.getClass().getSimpleName() + " 位置 " + (int) event.x() + "," + (int) event.y());
+                Log.info("按钮按下：" + s.getClass().getSimpleName()
+                        + " 位置 " + (int) event.x() + "," + (int) event.y());
                 return false;
             }
         }
@@ -208,19 +193,15 @@ public final class SortButton {
         return list == null ? List.of() : list;
     }
 
-    private boolean contains(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX < x + WIDTH && mouseY >= y && mouseY < y + HEIGHT;
-    }
-
     private void startDrag(double mouseX, double mouseY) {
         dragging = true;
         moved = false;
-        grabOffsetX = mouseX - x;
-        grabOffsetY = mouseY - y;
+        grabOffsetX = mouseX - widget.getX();
+        grabOffsetY = mouseY - widget.getY();
         startX = mouseX;
         startY = mouseY;
-        startXCache = x;
-        startYCache = y;
+        startWidgetX = widget.getX();
+        startWidgetY = widget.getY();
     }
 
     private void follow() {
@@ -230,11 +211,10 @@ public final class SortButton {
         }
         double mouseX = client.mouseHandler.getScaledXPos(client.getWindow());
         double mouseY = client.mouseHandler.getScaledYPos(client.getWindow());
-        x = (int) Math.round(mouseX - grabOffsetX);
-        y = (int) Math.round(mouseY - grabOffsetY);
-        clamp();
+        setPos((int) Math.round(mouseX - grabOffsetX), (int) Math.round(mouseY - grabOffsetY));
         if (Math.abs(mouseX - startX) > DRAG_THRESHOLD || Math.abs(mouseY - startY) > DRAG_THRESHOLD
-                || Math.abs(x - startXCache) > DRAG_THRESHOLD || Math.abs(y - startYCache) > DRAG_THRESHOLD) {
+                || Math.abs(widget.getX() - startWidgetX) > DRAG_THRESHOLD
+                || Math.abs(widget.getY() - startWidgetY) > DRAG_THRESHOLD) {
             moved = true;
         }
     }
@@ -247,8 +227,8 @@ public final class SortButton {
             return;
         }
         Config config = TweakRoll.config();
-        int dx = x - (ScreenBridge.leftPos(screen) + ScreenBridge.imageWidth(screen));
-        int dy = y - ScreenBridge.topPos(screen);
+        int dx = widget.getX() - (ScreenBridge.leftPos(screen) + ScreenBridge.imageWidth(screen));
+        int dy = widget.getY() - ScreenBridge.topPos(screen);
         switch (kind) {
             case KIND_BAG -> {
                 config.sortBagButtonDx = dx;
@@ -269,21 +249,15 @@ public final class SortButton {
 
     // ---------------------------------------------------------------- 位置
 
-    /** 拖动中不重算位置，避免和拖拽打架。 */
-    private void placeIfNeeded() {
-        if (!dragging) {
-            place();
-        }
-    }
-
     private void place() {
+        if (widget == null) {
+            return;
+        }
         Config config = TweakRoll.config();
         int baseX = ScreenBridge.leftPos(screen) + ScreenBridge.imageWidth(screen);
         int baseY = ScreenBridge.topPos(screen);
         if (kind == KIND_BAG && config.sortBagButtonDx == AUTO) {
-            x = baseX + 2;
-            y = baseY + ScreenBridge.imageHeight(screen) - 20;
-            clamp();
+            setPos(baseX + 2, baseY + ScreenBridge.imageHeight(screen) - 20);
             return;
         }
         int dx;
@@ -302,16 +276,17 @@ public final class SortButton {
                 dy = config.sortButtonDy;
             }
         }
-        x = baseX + dx;
-        y = baseY + dy;
-        clamp();
+        setPos(baseX + dx, baseY + dy);
     }
 
-    private void clamp() {
+    private void setPos(int x, int y) {
+        if (widget == null) {
+            return;
+        }
         int maxX = Math.max(0, screen.width - WIDTH);
         int maxY = Math.max(0, screen.height - HEIGHT);
-        x = Math.max(0, Math.min(maxX, x));
-        y = Math.max(0, Math.min(maxY, y));
+        widget.setX(Math.max(0, Math.min(maxX, x)));
+        widget.setY(Math.max(0, Math.min(maxY, y)));
     }
 
     private String kindName() {
