@@ -27,7 +27,8 @@ public final class SortButton {
     /** 第二颗按钮（背包）还没被拖过时的默认垂直位置：面板底边往上 20px。 */
     private static final int AUTO = Integer.MIN_VALUE;
 
-    private static final List<SortButton> ACTIVE = new ArrayList<>();
+    /** 按界面分组保存按钮：创造模式和生存背包会同时挂载，不能共用一个全局列表。 */
+    private static final java.util.Map<Screen, List<SortButton>> ACTIVE = new java.util.WeakHashMap<>();
 
     private final AbstractContainerScreen<?> screen;
     private final int[] slots;
@@ -40,6 +41,8 @@ public final class SortButton {
     private double grabOffsetY;
     private double startX;
     private double startY;
+    private int startWidgetX;
+    private int startWidgetY;
 
     private static final int KIND_PRIMARY = 0;
     private static final int KIND_BAG = 1;
@@ -53,7 +56,7 @@ public final class SortButton {
 
     /** 每次界面初始化都调一次（窗口缩放会重建控件）。 */
     static void attach(AbstractContainerScreen<?> screen) {
-        ACTIVE.clear();
+        ACTIVE.remove(screen);
         Config config = TweakRoll.config();
         if (!config.sortInventory || !config.sortButton) {
             return;
@@ -83,13 +86,14 @@ public final class SortButton {
     }
 
     private static void add(SortButton button, String labelKey) {
+        List<SortButton> list = ACTIVE.computeIfAbsent(button.screen, key -> new ArrayList<>());
         button.widget = Button.builder(Component.translatable(labelKey),
                         pressed -> InventorySorter.trigger(button.screen, button.slots))
                 .bounds(0, 0, WIDTH, HEIGHT)
                 .build();
         button.place();
         ScreenBridge.addWidget(button.screen, button.widget);
-        ACTIVE.add(button);
+        list.add(button);
         Log.info("整理按钮已挂载：" + button.screen.getClass().getSimpleName()
                 + " pos=" + button.widget.getX() + "," + button.widget.getY());
     }
@@ -99,10 +103,12 @@ public final class SortButton {
         if (!event.isLeftMouse()) {
             return true;
         }
-        for (SortButton button : ACTIVE) {
-            if (button.screen == s && button.widget != null
+        for (SortButton button : buttonsOf(s)) {
+            if (button.widget != null
                     && button.widget.isMouseOver(event.x(), event.y())) {
                 button.startDrag(event.x(), event.y());
+                debugOnce("hit:" + s.getClass().getSimpleName(),
+                        "按钮点击命中：" + s.getClass().getSimpleName());
                 return false;
             }
         }
@@ -112,8 +118,8 @@ public final class SortButton {
     /** 拖动：立刻跟随。 */
     public static boolean onDrag(Screen s, MouseButtonEvent event, double deltaX, double deltaY) {
         boolean handled = false;
-        for (SortButton button : ACTIVE) {
-            if (button.dragging && button.screen == s) {
+        for (SortButton button : buttonsOf(s)) {
+            if (button.dragging) {
                 button.follow();
                 handled = true;
             }
@@ -124,8 +130,8 @@ public final class SortButton {
     /** 松开：没移动就是点击（执行整理），移动过就保存新位置。 */
     public static boolean onRelease(Screen s, MouseButtonEvent event) {
         boolean handled = false;
-        for (SortButton button : ACTIVE) {
-            if (button.dragging && button.screen == s) {
+        for (SortButton button : buttonsOf(s)) {
+            if (button.dragging) {
                 button.finishDrag();
                 handled = true;
             }
@@ -135,9 +141,11 @@ public final class SortButton {
 
     /** 每个客户端 tick 跟一次，拖拽事件稀疏时也不掉队。 */
     static void tick(Minecraft client) {
-        for (SortButton button : ACTIVE) {
-            if (button.dragging) {
-                button.follow();
+        for (List<SortButton> list : ACTIVE.values()) {
+            for (SortButton button : list) {
+                if (button.dragging) {
+                    button.follow();
+                }
             }
         }
     }
@@ -149,6 +157,22 @@ public final class SortButton {
         grabOffsetY = mouseY - widget.getY();
         startX = mouseX;
         startY = mouseY;
+        startWidgetX = widget.getX();
+        startWidgetY = widget.getY();
+    }
+
+    /** 同一条诊断只打一次，避免刷屏。 */
+    private static final java.util.Set<String> DEBUG_SEEN = new java.util.HashSet<>();
+
+    private static List<SortButton> buttonsOf(Screen screen) {
+        List<SortButton> list = ACTIVE.get(screen);
+        return list == null ? List.of() : list;
+    }
+
+    private static void debugOnce(String key, String message) {
+        if (DEBUG_SEEN.add(key)) {
+            Log.info(message);
+        }
     }
 
     private void finishDrag() {
@@ -194,10 +218,13 @@ public final class SortButton {
         }
         double mouseX = client.mouseHandler.getScaledXPos(client.getWindow());
         double mouseY = client.mouseHandler.getScaledYPos(client.getWindow());
-        if (Math.abs(mouseX - startX) > DRAG_THRESHOLD || Math.abs(mouseY - startY) > DRAG_THRESHOLD) {
+        setPos((int) Math.round(mouseX - grabOffsetX), (int) Math.round(mouseY - grabOffsetY));
+        if (Math.abs(mouseX - startX) > DRAG_THRESHOLD
+                || Math.abs(mouseY - startY) > DRAG_THRESHOLD
+                || Math.abs(widget.getX() - startWidgetX) > DRAG_THRESHOLD
+                || Math.abs(widget.getY() - startWidgetY) > DRAG_THRESHOLD) {
             moved = true;
         }
-        setPos((int) Math.round(mouseX - grabOffsetX), (int) Math.round(mouseY - grabOffsetY));
     }
 
     /** 按配置摆放；背包那颗没被拖过时贴着面板底部放。 */
