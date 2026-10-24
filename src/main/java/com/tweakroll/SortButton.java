@@ -5,10 +5,15 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.InventoryMenu;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,6 +97,9 @@ public final class SortButton {
                 .bounds(0, 0, WIDTH, HEIGHT)
                 .build();
         button.place();
+        if (button.kind == KIND_CREATIVE) {
+            button.widget.setVisible(creativeInventoryTab());
+        }
         ScreenBridge.addWidget(button.screen, button.widget);
         list.add(button);
         Log.info("整理按钮已挂载：" + button.screen.getClass().getSimpleName()
@@ -104,7 +112,7 @@ public final class SortButton {
             return true;
         }
         for (SortButton button : buttonsOf(s)) {
-            if (button.widget != null
+            if (button.widget != null && button.widget.isVisible()
                     && button.widget.isMouseOver(event.x(), event.y())) {
                 button.startDrag(event.x(), event.y());
                 debugOnce("hit:" + s.getClass().getSimpleName(),
@@ -143,6 +151,14 @@ public final class SortButton {
     static void tick(Minecraft client) {
         for (List<SortButton> list : ACTIVE.values()) {
             for (SortButton button : list) {
+                if (button.kind == KIND_CREATIVE && button.widget != null) {
+                    boolean show = creativeInventoryTab();
+                    button.widget.setVisible(show);
+                    if (!show) {
+                        button.dragging = false;
+                        continue;
+                    }
+                }
                 if (button.dragging) {
                     button.follow();
                 }
@@ -202,6 +218,33 @@ public final class SortButton {
         config.save();
         Log.info("整理按钮位置已保存：" + kindName() + " dx=" + dx + ", dy=" + dy);
     }
+
+    /**
+     * 创造模式下当前选中的是不是「物品栏」那一页。
+     * {@code CreativeModeInventoryScreen.selectedTab} 是私有静态字段，
+     * {@code CreativeModeTabs.INVENTORY} 也是私有的 —— 都靠反射拿，解析结果缓存。
+     */
+    private static boolean creativeInventoryTab() {
+        try {
+            if (creativeInventoryTab == null) {
+                Field keyField = CreativeModeTabs.class.getDeclaredField("INVENTORY");
+                keyField.setAccessible(true);
+                ResourceKey<CreativeModeTab> key = (ResourceKey<CreativeModeTab>) keyField.get(null);
+                // 用 Identifier 版本取值：ResourceKey 版本要 com.mojang.serialization.Keyable，编译期没带
+                creativeInventoryTab = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(key.identifier());
+            }
+            if (selectedTabField == null) {
+                selectedTabField = CreativeModeInventoryScreen.class.getDeclaredField("selectedTab");
+                selectedTabField.setAccessible(true);
+            }
+            return selectedTabField.get(null) == creativeInventoryTab;
+        } catch (Throwable throwable) {
+            return true; // 读不到就照常显示，别让按钮凭空消失
+        }
+    }
+
+    private static Field selectedTabField;
+    private static CreativeModeTab creativeInventoryTab;
 
     private String kindName() {
         return switch (kind) {

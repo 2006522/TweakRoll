@@ -1,5 +1,15 @@
 # 更新日志
 
+## v1.9.4
+
+创造模式里「整理」按钮**只在「物品栏」标签页显示**。
+
+- 之前整页都显示，切到「建筑方块」等分类页时按钮会压在物品网格上。
+- 现在每 tick 读一次当前选中的创造标签页（反射 `CreativeModeInventoryScreen.selectedTab`
+  与 `CreativeModeTabs.INVENTORY`），非「物品栏」页自动隐藏；隐藏时也不参与点击。
+- 编译需要 `com.mojang.serialization.Keyable`（Registry 的签名里带），
+  `deps/dfu.jar` 已补进构建脚本与 `fetch-deps.sh`。
+
 ## v1.9.3
 
 创造模式按钮"点得到但拖不动"的真正原因找到了。

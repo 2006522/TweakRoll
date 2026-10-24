@@ -41,5 +41,8 @@ echo "完成：依赖在 $DEPS"
 ls -1 "$DEPS"
 echo "fabric-api 模块数：$(ls -1 "$DEPS/fapi" | wc -l)"
 
+echo "== dfu.jar（com.mojang.serialization，编译 Registry 相关 API 需要）=="
+[ -f "$DEPS/dfu.jar" ] || $CURL -o "$DEPS/dfu.jar" "https://bmclapi2.bangbang93.com/maven/com/mojang/datafixerupper/11.0.22/datafixerupper-11.0.22.jar"
+
 echo "== mixin.jar =="
 [ -f "$DEPS/mixin.jar" ] || $CURL -o "$DEPS/mixin.jar" "$MIXIN_URL"
