@@ -61,7 +61,7 @@ public final class TweakRoll implements ClientModInitializer {
                 return;
             }
             // 窗口缩放会重建控件，所以每次 init 都要重新挂按钮
-            InventorySorter.addButton(container);
+            SortButton.attach(container);
             if (wiredScreens.add(screen)) {
                 InventoryTweaks.onScreenOpened(container);
                 // 拖拽事件（跟手），拿不到时靠下面的 tick 轮询兜底
@@ -72,6 +72,10 @@ public final class TweakRoll implements ClientModInitializer {
                 // R 键整理背包：KeyMapping 在界面打开时收不到 consumeClick，只能从按键事件里抢
                 ScreenKeyboardEvents.allowKeyPress(screen).register((s, event) ->
                         !InventorySorter.onKeyPress(s, event));
+                // 整理按钮：按住拖动改位置，轻点是执行整理
+                ScreenMouseEvents.allowMouseClick(screen).register(SortButton::onClick);
+                ScreenMouseEvents.allowMouseDrag(screen).register(SortButton::onDrag);
+                ScreenMouseEvents.allowMouseRelease(screen).register(SortButton::onRelease);
             }
         });
 

@@ -17,8 +17,12 @@ public final class Config {
     public boolean sortInventory = true;
     /** 单人游戏时直接在集成服务器改数据（零点击、瞬间完成）。 */
     public boolean instantSort = true;
-    /** 在背包/箱子界面右上角显示「整理」按钮。 */
+    /** 在背包/箱子界面显示「整理」按钮。 */
     public boolean sortButton = true;
+    /** 整理按钮相对面板右边缘的水平偏移（可以拖动按钮来改）。 */
+    public int sortButtonDx = -40;
+    /** 整理按钮相对面板顶边的垂直偏移。 */
+    public int sortButtonDy = -18;
 
     private Path path() {
         return FabricLoader.getInstance().getConfigDir().resolve("tweakroll.properties");
@@ -40,6 +44,8 @@ public final class Config {
         sortInventory = readBoolean(properties, "sortInventory", sortInventory);
         instantSort = readBoolean(properties, "instantSort", instantSort);
         sortButton = readBoolean(properties, "sortButton", sortButton);
+        sortButtonDx = readInt(properties, "sortButtonDx", sortButtonDx);
+        sortButtonDy = readInt(properties, "sortButtonDy", sortButtonDy);
     }
 
     public void save() {
@@ -48,6 +54,8 @@ public final class Config {
         properties.setProperty("sortInventory", Boolean.toString(sortInventory));
         properties.setProperty("instantSort", Boolean.toString(instantSort));
         properties.setProperty("sortButton", Boolean.toString(sortButton));
+        properties.setProperty("sortButtonDx", Integer.toString(sortButtonDx));
+        properties.setProperty("sortButtonDy", Integer.toString(sortButtonDy));
         Path file = path();
         try {
             Files.createDirectories(file.getParent());
@@ -56,6 +64,18 @@ public final class Config {
             }
         } catch (IOException exception) {
             Log.error("保存配置失败", exception);
+        }
+    }
+
+    private static int readInt(Properties properties, String key, int fallback) {
+        String raw = properties.getProperty(key);
+        if (raw == null) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException exception) {
+            return fallback;
         }
     }
 

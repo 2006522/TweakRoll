@@ -77,10 +77,13 @@ final class InventoryTweaks {
      * <p>注意：26.x 的鼠标按键是 SDL 编号（左=1/中=2/右=3），
      * 必须用 {@code event.isLeftMouse()} 判断，不能用 {@code button() == 0}。</p>
      */
-    static boolean onSweepDrag(Screen screen, MouseButtonEvent event, double mouseX, double mouseY) {
+    static boolean onSweepDrag(Screen screen, MouseButtonEvent event, double deltaX, double deltaY) {
         if (!(screen instanceof AbstractContainerScreen<?> container)) {
             return true;
         }
+        // 后两个参数是拖拽增量，鼠标位置要从 event 取
+        double mouseX = event.x();
+        double mouseY = event.y();
         if (!event.isLeftMouse() || !TweakRoll.config().shiftHoverMove || !shiftDown()) {
             return true;
         }

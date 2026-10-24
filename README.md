@@ -4,7 +4,7 @@
 
 给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组。
 
-![version](https://img.shields.io/badge/version-1.7.0-blue)
+![version](https://img.shields.io/badge/version-1.8.0-blue)
 ![minecraft](https://img.shields.io/badge/Minecraft-26.4--snapshot--5-3C8527)
 ![loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -35,7 +35,8 @@
 | 发射器（投掷器）/ 漏斗 | 容器那 9 / 5 格 |
 | 熔炉、工作台等 | 不整理（有结果格，避免误操作） |
 
-界面上还会有一个「**整理**」按钮（背包和箱子界面右上角），点它和按 `R` 等价。
+界面上还会有一个「**整理**」按钮（默认在面板右上角）：
+**轻点**它和按 `R` 等价，**按住拖动**可以把它挪到顺手的位置，松手自动记住。
 整理途中再按一次 `R` 取消。
 **单人游戏是零点击的**：直接把服务端数据改好再同步，瞬间整齐；
 多人服务器上退回发包模拟点击，满背包约 0.6 秒。
@@ -44,10 +45,10 @@
 
 **① 下载**
 
-[`鼠标手势 (TweakRoll) 1.7.0`](https://github.com/2006522/TweakRoll/releases/download/v1.7.0/TweakRoll-1.7.0.jar)
+[`鼠标手势 (TweakRoll) 1.8.0`](https://github.com/2006522/TweakRoll/releases/download/v1.8.0/TweakRoll-1.8.0.jar)
 
-> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.7.0.jar`，
-> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.7.0」。
+> GitHub 的发布文件名不支持非 ASCII 字符，所以实际文件名是 `TweakRoll-1.8.0.jar`，
+> 下载页上显示的名字是「鼠标手势 (TweakRoll) 1.8.0」。
 
 **② 前置**：Fabric Loader ≥ 0.19.5 ＋ Fabric API（26.4 版本线，如 `0.164.1+26.4`）＋ Java 25
 
@@ -71,7 +72,9 @@
 shiftHoverMove=true   # Shift+左键扫过转移
 sortInventory=true    # R 键一键整理（背包 + 容器）
 instantSort=true      # 单人游戏走服务端直改（零点击）
-sortButton=true        # 界面右上角显示「整理」按钮
+sortButton=true        # 显示「整理」按钮
+sortButtonDx=-40       # 按钮位置（相对面板右边缘，可拖动改）
+sortButtonDy=-18       # 按钮位置（相对面板顶边）
 ```
 
 文件在 `config/tweakroll.properties`，游戏内按 `O` 也能开关。
