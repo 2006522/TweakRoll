@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -30,8 +31,8 @@ public final class SortButton {
 
     private final AbstractContainerScreen<?> screen;
     private final int[] slots;
-    /** true 表示这是"背包"那颗按钮（用 sortBagButton* 配置）。 */
-    private final boolean bagButton;
+    /** 0=主（背包界面 / 容器那颗），1=容器界面里的「背包」，2=创造模式。 */
+    private final int kind;
     private Button widget;
     private boolean dragging;
     private boolean moved;
@@ -40,10 +41,14 @@ public final class SortButton {
     private double startX;
     private double startY;
 
-    private SortButton(AbstractContainerScreen<?> screen, int[] slots, boolean bagButton) {
+    private static final int KIND_PRIMARY = 0;
+    private static final int KIND_BAG = 1;
+    private static final int KIND_CREATIVE = 2;
+
+    private SortButton(AbstractContainerScreen<?> screen, int[] slots, int kind) {
         this.screen = screen;
         this.slots = slots;
-        this.bagButton = bagButton;
+        this.kind = kind;
     }
 
     /** 每次界面初始化都调一次（窗口缩放会重建控件）。 */
@@ -56,17 +61,24 @@ public final class SortButton {
         int[] containerSlots = InventorySorter.containerSlots(screen.getMenu());
         int[] bagSlots = InventorySorter.bagSlots(screen.getMenu());
 
+        if (screen instanceof CreativeModeInventoryScreen) {
+            // 创造模式背包：只有一颗，位置和箱子界面的「背包」按钮分开存
+            if (bagSlots.length > 0) {
+                add(new SortButton(screen, bagSlots, KIND_CREATIVE), "tweakroll.button.sort");
+            }
+            return;
+        }
         if (screen.getMenu() instanceof InventoryMenu) {
             if (bagSlots.length > 0) {
-                add(new SortButton(screen, bagSlots, false), "tweakroll.button.sort");
+                add(new SortButton(screen, bagSlots, KIND_PRIMARY), "tweakroll.button.sort");
             }
             return;
         }
         if (containerSlots.length > 0) {
-            add(new SortButton(screen, containerSlots, false), "tweakroll.button.sort_container");
+            add(new SortButton(screen, containerSlots, KIND_PRIMARY), "tweakroll.button.sort_container");
         }
         if (bagSlots.length > 0) {
-            add(new SortButton(screen, bagSlots, true), "tweakroll.button.sort_bag");
+            add(new SortButton(screen, bagSlots, KIND_BAG), "tweakroll.button.sort_bag");
         }
     }
 
@@ -149,15 +161,30 @@ public final class SortButton {
         Config config = TweakRoll.config();
         int dx = widget.getX() - (ScreenBridge.leftPos(screen) + ScreenBridge.imageWidth(screen));
         int dy = widget.getY() - ScreenBridge.topPos(screen);
-        if (bagButton) {
-            config.sortBagButtonDx = dx;
-            config.sortBagButtonDy = dy;
-        } else {
-            config.sortButtonDx = dx;
-            config.sortButtonDy = dy;
+        switch (kind) {
+            case KIND_BAG -> {
+                config.sortBagButtonDx = dx;
+                config.sortBagButtonDy = dy;
+            }
+            case KIND_CREATIVE -> {
+                config.sortCreativeDx = dx;
+                config.sortCreativeDy = dy;
+            }
+            default -> {
+                config.sortButtonDx = dx;
+                config.sortButtonDy = dy;
+            }
         }
         config.save();
-        Log.info("整理按钮位置已保存：" + (bagButton ? "背包" : "主") + " dx=" + dx + ", dy=" + dy);
+        Log.info("整理按钮位置已保存：" + kindName() + " dx=" + dx + ", dy=" + dy);
+    }
+
+    private String kindName() {
+        return switch (kind) {
+            case KIND_BAG -> "背包";
+            case KIND_CREATIVE -> "创造";
+            default -> "主";
+        };
     }
 
     private void follow() {
@@ -178,12 +205,26 @@ public final class SortButton {
         Config config = TweakRoll.config();
         int baseX = ScreenBridge.leftPos(screen) + ScreenBridge.imageWidth(screen);
         int baseY = ScreenBridge.topPos(screen);
-        if (bagButton && config.sortBagButtonDx == AUTO) {
+        if (kind == KIND_BAG && config.sortBagButtonDx == AUTO) {
             setPos(baseX + 2, baseY + ScreenBridge.imageHeight(screen) - 20);
             return;
         }
-        int dx = bagButton ? config.sortBagButtonDx : config.sortButtonDx;
-        int dy = bagButton ? config.sortBagButtonDy : config.sortButtonDy;
+        int dx;
+        int dy;
+        switch (kind) {
+            case KIND_BAG -> {
+                dx = config.sortBagButtonDx;
+                dy = config.sortBagButtonDy;
+            }
+            case KIND_CREATIVE -> {
+                dx = config.sortCreativeDx;
+                dy = config.sortCreativeDy;
+            }
+            default -> {
+                dx = config.sortButtonDx;
+                dy = config.sortButtonDy;
+            }
+        }
         setPos(baseX + dx, baseY + dy);
     }
 

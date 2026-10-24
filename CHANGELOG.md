@@ -1,5 +1,15 @@
 # 更新日志
 
+## v1.9.2
+
+创造模式背包里「整理」按钮终于能拖了。
+
+- 上一版把鼠标事件注入到 `AbstractContainerScreen`，但 `CreativeModeInventoryScreen`
+  **自己重写了** `mouseClicked` / `mouseDragged` / `mouseReleased`，子类不调 super 时父类注入不会执行。
+  新增 `CreativeScreenMouseMixin` 直接挂到 `CreativeModeInventoryScreen` 上。
+- 创造模式按钮**使用独立位置**（`sortCreativeDx/Dy`，默认在面板左侧 `-42, 20`），
+  不再沿用箱子界面「背包」按钮的位置（之前会被拖到创造模式的丢弃槽上）。
+
 ## v1.9.1
 
 修复创造模式背包里「整理」按钮拖不动。

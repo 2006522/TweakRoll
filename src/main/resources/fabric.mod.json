@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "tweakroll",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "name": "鼠标手势(TweakRoll)",
   "description": "鼠标手势 (TweakRoll)：按住 Shift 用左键扫过格子，物品栏与背包之间快速转移。Minecraft 26.4-snapshot-5 / Fabric。",
   "authors": [

@@ -26,6 +26,9 @@ public final class Config {
     /** 容器界面里"整理背包"那颗按钮的位置（Integer.MIN_VALUE = 自动贴在面板底部）。 */
     public int sortBagButtonDx = Integer.MIN_VALUE;
     public int sortBagButtonDy = Integer.MIN_VALUE;
+    /** 创造模式背包里「整理」按钮的位置（默认放在面板左侧，别压住丢弃槽）。 */
+    public int sortCreativeDx = -42;
+    public int sortCreativeDy = 20;
 
     private Path path() {
         return FabricLoader.getInstance().getConfigDir().resolve("tweakroll.properties");
@@ -51,6 +54,8 @@ public final class Config {
         sortButtonDy = readInt(properties, "sortButtonDy", sortButtonDy);
         sortBagButtonDx = readInt(properties, "sortBagButtonDx", sortBagButtonDx);
         sortBagButtonDy = readInt(properties, "sortBagButtonDy", sortBagButtonDy);
+        sortCreativeDx = readInt(properties, "sortCreativeDx", sortCreativeDx);
+        sortCreativeDy = readInt(properties, "sortCreativeDy", sortCreativeDy);
     }
 
     public void save() {
@@ -63,6 +68,8 @@ public final class Config {
         properties.setProperty("sortButtonDy", Integer.toString(sortButtonDy));
         properties.setProperty("sortBagButtonDx", Integer.toString(sortBagButtonDx));
         properties.setProperty("sortBagButtonDy", Integer.toString(sortBagButtonDy));
+        properties.setProperty("sortCreativeDx", Integer.toString(sortCreativeDx));
+        properties.setProperty("sortCreativeDy", Integer.toString(sortCreativeDy));
         Path file = path();
         try {
             Files.createDirectories(file.getParent());
