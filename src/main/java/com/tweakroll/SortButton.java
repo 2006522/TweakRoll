@@ -46,6 +46,10 @@ public final class SortButton {
 
     private boolean dragging;
     private boolean moved;
+    /** 已经因为屏幕边界把位置改写回配置了（每次挂载只做一次，避免每 tick 写盘）。 */
+    private boolean clampedStored;
+    /** 已经打印过一次几何兜底日志，别每 tick 刷。 */
+    private boolean geometryLogged;
     private double grabOffsetX;
     private double grabOffsetY;
     private double startX;
@@ -150,8 +154,13 @@ public final class SortButton {
         var iterator = ACTIVE.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<Screen, List<SortButton>> entry = iterator.next();
-            // 界面已经关掉了：清掉记录，别再去动那个界面的控件列表
-            if (entry.getKey() != current && entry.getValue().stream().noneMatch(button -> button.dragging)) {
+            // 界面已经关掉了：拖动中被关掉的话先把位置补存一次，别让这次拖动白做
+            if (entry.getKey() != current) {
+                for (SortButton button : entry.getValue()) {
+                    if (button.dragging) {
+                        button.finishDrag(false);
+                    }
+                }
                 iterator.remove();
                 continue;
             }
@@ -226,6 +235,8 @@ public final class SortButton {
     private void startDrag(double mouseX, double mouseY) {
         dragging = true;
         moved = false;
+        // 拖动结束会重新算偏移，所以允许 place() 再次把裁剪结果写回配置
+        clampedStored = false;
         grabOffsetX = mouseX - widget.getX();
         grabOffsetY = mouseY - widget.getY();
         startX = mouseX;
@@ -250,15 +261,39 @@ public final class SortButton {
     }
 
     private void finishDrag() {
-        follow();
+        finishDrag(true);
+    }
+
+    /**
+     * @param allowRun 松开时鼠标没动过就算"点了一下"，要执行整理；
+     *                 界面在拖动途中被关掉时传 false，别在一张已经关掉的界面上整理。
+     */
+    private void finishDrag(boolean allowRun) {
+        if (allowRun) {
+            // 界面已经关掉时不要再照着当前鼠标位置挪一下，否则存的是"关掉之后"的坐标
+            follow();
+        }
         dragging = false;
         if (!moved) {
-            run();
+            if (allowRun) {
+                run();
+            }
             return;
         }
+        int baseX = panelLeft() + ScreenBridge.imageWidth(screen);
+        int baseY = panelTop();
+        int dx = widget.getX() - baseX;
+        int dy = widget.getY() - baseY;
+        storeOffset(dx, dy);
+        TweakRoll.config().save();
+        // 刚存的偏移就是当前显示的位置，别让 place() 认为还需要再纠正一次
+        clampedStored = true;
+        Log.info("整理按钮位置已保存：" + kindName() + " dx=" + dx + ", dy=" + dy);
+    }
+
+    /** 把偏移写进对应那颗按钮的配置字段（不落盘）。 */
+    private void storeOffset(int dx, int dy) {
         Config config = TweakRoll.config();
-        int dx = widget.getX() - (ScreenBridge.leftPos(screen) + ScreenBridge.imageWidth(screen));
-        int dy = widget.getY() - ScreenBridge.topPos(screen);
         switch (kind) {
             case KIND_BAG -> {
                 config.sortBagButtonDx = dx;
@@ -273,19 +308,69 @@ public final class SortButton {
                 config.sortButtonDy = dy;
             }
         }
-        config.save();
-        Log.info("整理按钮位置已保存：" + kindName() + " dx=" + dx + ", dy=" + dy);
     }
 
     // ---------------------------------------------------------------- 位置
+
+    /**
+     * 面板左边缘。
+     *
+     * <p>{@code ScreenEvents.AFTER_INIT} 是在 {@code Screen#init} 返回时触发的，而
+     * {@code AbstractContainerScreen} 是在 {@code super.init()} <b>之后</b>才算
+     * {@code leftPos/topPos}，所以挂按钮的那一刻它们还是 0。这时拿 0 当基准会把按钮
+     * 摆到左上角，等下一个 tick 才跳回原位；更糟的是这时候拖动会把
+     * 「相对 0 的偏移」写进配置（比如 dy=-15），下次打开落在面板外面被裁到屏幕顶，
+     * 用户只能再拖一次——看起来就是「位置根本没保存」。
+     *
+     * <p>原版的算法就是居中，这里照着补一份，保证任何时刻基准都对。</p>
+     */
+    private int panelLeft() {
+        int left = ScreenBridge.leftPos(screen);
+        int width = ScreenBridge.imageWidth(screen);
+        if (left == 0 && screen.width > width) {
+            left = (screen.width - width) / 2;
+            logGeometryFallback(left, panelTopRaw());
+        }
+        return left;
+    }
+
+    private int panelTop() {
+        int top = ScreenBridge.topPos(screen);
+        int height = ScreenBridge.imageHeight(screen);
+        if (top == 0 && screen.height > height) {
+            top = (screen.height - height) / 2;
+            logGeometryFallback(panelLeftRaw(), top);
+        }
+        return top;
+    }
+
+    private int panelLeftRaw() {
+        int left = ScreenBridge.leftPos(screen);
+        int width = ScreenBridge.imageWidth(screen);
+        return left == 0 && screen.width > width ? (screen.width - width) / 2 : left;
+    }
+
+    private int panelTopRaw() {
+        int top = ScreenBridge.topPos(screen);
+        int height = ScreenBridge.imageHeight(screen);
+        return top == 0 && screen.height > height ? (screen.height - height) / 2 : top;
+    }
+
+    private void logGeometryFallback(int left, int top) {
+        if (geometryLogged) {
+            return;
+        }
+        geometryLogged = true;
+        Log.info("界面几何还没算好，按居中补算：left=" + left + ", top=" + top);
+    }
 
     private void place() {
         if (widget == null) {
             return;
         }
         Config config = TweakRoll.config();
-        int baseX = ScreenBridge.leftPos(screen) + ScreenBridge.imageWidth(screen);
-        int baseY = ScreenBridge.topPos(screen);
+        int baseX = panelLeft() + ScreenBridge.imageWidth(screen);
+        int baseY = panelTop();
         if (kind == KIND_BAG && config.sortBagButtonDx == AUTO) {
             setPos(baseX + 2, baseY + ScreenBridge.imageHeight(screen) - 20);
             return;
@@ -306,17 +391,29 @@ public final class SortButton {
                 dy = config.sortButtonDy;
             }
         }
-        setPos(baseX + dx, baseY + dy);
+        if (setPos(baseX + dx, baseY + dy) && !dragging && !clampedStored) {
+            // 存的位置落到屏幕外被裁掉了：把裁剪后的偏移写回去，
+            // 否则每次打开都要"回到屏幕外 → 再被裁一次"，看着就像位置没保存住
+            clampedStored = true;
+            storeOffset(widget.getX() - baseX, widget.getY() - baseY);
+            config.save();
+            Log.info("整理按钮超出屏幕，已把裁剪后的位置写回配置：" + kindName()
+                    + " dx=" + (widget.getX() - baseX) + ", dy=" + (widget.getY() - baseY));
+        }
     }
 
-    private void setPos(int x, int y) {
+    /** @return 是否发生了裁剪（位置和期望值不一致）。 */
+    private boolean setPos(int x, int y) {
         if (widget == null) {
-            return;
+            return false;
         }
         int maxX = Math.max(0, screen.width - WIDTH);
         int maxY = Math.max(0, screen.height - HEIGHT);
-        widget.setX(Math.max(0, Math.min(maxX, x)));
-        widget.setY(Math.max(0, Math.min(maxY, y)));
+        int clampedX = Math.max(0, Math.min(maxX, x));
+        int clampedY = Math.max(0, Math.min(maxY, y));
+        widget.setX(clampedX);
+        widget.setY(clampedY);
+        return clampedX != x || clampedY != y;
     }
 
     private String kindName() {
