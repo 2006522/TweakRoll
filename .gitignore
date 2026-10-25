@@ -23,3 +23,6 @@ Thumbs.db
 # 发布用的 jar（中文文件名，走 raw 直链下载；Release 附件只能 ASCII）
 !release/
 !release/*.jar
+
+# understand-anything 生成的知识图谱，不入库
+.ua/
