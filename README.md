@@ -2,9 +2,10 @@
 
 **按住 Shift 用左键扫一排，物品栏和背包就换好了。**
 
-给 **Minecraft 26.4-snapshot-5 (Fabric)** 的客户端模组，单人存档和联机都能用。
+给 **Minecraft 26.4-snapshot-5 (Fabric)** 的模组，单人存档直接装就能用。
+**联机时服务端也要装** —— 1.13.0 起「Shift 搬运的落点顺序」是在服务端改的。
 
-![version](https://img.shields.io/badge/version-1.12.3-blue)
+![version](https://img.shields.io/badge/version-1.13.0-blue)
 ![minecraft](https://img.shields.io/badge/Minecraft-26.4--snapshot--5-3C8527)
 ![loader](https://img.shields.io/badge/Fabric%20Loader-%E2%89%A5%200.19.5-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-blue)

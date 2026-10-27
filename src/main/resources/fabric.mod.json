@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "tweakroll",
-  "version": "1.12.3",
+  "version": "1.13.0",
   "name": "鼠标手势(TweakRoll)",
   "description": "鼠标手势 (TweakRoll)：按住 Shift 用左键扫过格子，物品栏与背包之间快速转移；R 键一键整理背包和箱子。Minecraft 26.4-snapshot-5 / Fabric。",
   "authors": [
@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "icon": "assets/tweakroll/icon.png",
-  "environment": "client",
+  "environment": "*",
   "entrypoints": {
     "client": [
       "com.tweakroll.TweakRoll"
@@ -23,8 +23,7 @@
   },
   "mixins": [
     {
-      "config": "tweakroll.mixins.json",
-      "environment": "client"
+      "config": "tweakroll.mixins.json"
     }
   ]
 }
