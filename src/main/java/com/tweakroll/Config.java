@@ -25,6 +25,14 @@ public final class Config {
     public int sortBagButtonDx = Integer.MIN_VALUE;
     public int sortBagButtonDy = Integer.MIN_VALUE;
     /**
+     * 上面那个 dy 是否已经按<b>面板底部</b>为基准存放。
+     *
+     * <p>老版本是按「面板顶边 + dy」算的。但不同容器面板高度不一样
+     * （大箱子 222、熔炉 166），同一个 dy 落到屏幕上能差几十像素，
+     * 表现就是「同一颗按钮换个界面位置就变了」。老配置读到这个 false 会重置一次。</p>
+     */
+    public boolean sortBagFromBottom = false;
+    /**
      * 创造模式「物品栏」页里整理按钮的位置。
      * 默认贴面板左侧外面：面板右边那两列标签页会盖住放在右侧的按钮。
      */
@@ -54,6 +62,7 @@ public final class Config {
         sortButtonDy = readInt(properties, "sortButtonDy", sortButtonDy);
         sortBagButtonDx = readInt(properties, "sortBagButtonDx", sortBagButtonDx);
         sortBagButtonDy = readInt(properties, "sortBagButtonDy", sortBagButtonDy);
+        sortBagFromBottom = readBoolean(properties, "sortBagFromBottom", sortBagFromBottom);
         sortCreativeDx = readInt(properties, "sortCreativeDx", sortCreativeDx);
         sortCreativeDy = readInt(properties, "sortCreativeDy", sortCreativeDy);
     }
@@ -67,6 +76,7 @@ public final class Config {
         properties.setProperty("sortButtonDy", Integer.toString(sortButtonDy));
         properties.setProperty("sortBagButtonDx", Integer.toString(sortBagButtonDx));
         properties.setProperty("sortBagButtonDy", Integer.toString(sortBagButtonDy));
+        properties.setProperty("sortBagFromBottom", Boolean.toString(sortBagFromBottom));
         properties.setProperty("sortCreativeDx", Integer.toString(sortCreativeDx));
         properties.setProperty("sortCreativeDy", Integer.toString(sortCreativeDy));
         Path file = path();

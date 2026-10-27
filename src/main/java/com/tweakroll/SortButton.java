@@ -281,7 +281,7 @@ public final class SortButton {
             return;
         }
         int baseX = panelLeft() + ScreenBridge.imageWidth(screen);
-        int baseY = panelTop();
+        int baseY = baseY();
         int dx = widget.getX() - baseX;
         int dy = widget.getY() - baseY;
         storeOffset(dx, dy);
@@ -364,15 +364,38 @@ public final class SortButton {
         Log.info("界面几何还没算好，按居中补算：left=" + left + ", top=" + top);
     }
 
+    /**
+     * 这颗按钮的纵向基准。
+     *
+     * <p>「整理背包」那颗贴在<b>面板底部</b>，所以基准取底边；其余的都贴顶边。
+     * 用同一个「顶边 + dy」去算的话，箱子（高 222）、熔炉（高 166）、工作台
+     * 的 {@code topPos} 各不相同，同一个 dy 落到屏幕上就差几十像素 ——
+     * 表现就是「同一个按钮，换个界面位置就变了」。</p>
+     */
+    private int baseY() {
+        return kind == KIND_BAG
+                ? panelTop() + ScreenBridge.imageHeight(screen)
+                : panelTop();
+    }
+
     private void place() {
         if (widget == null) {
             return;
         }
         Config config = TweakRoll.config();
+        if (kind == KIND_BAG && !config.sortBagFromBottom) {
+            // 老配置的 dy 是相对面板顶边存的：大箱子（高 222）和熔炉（高 166）算出来差几十像素。
+            // 一次性重置成"贴面板底部"，从此按底边记，换任何容器都对得上。
+            config.sortBagButtonDx = AUTO;
+            config.sortBagButtonDy = AUTO;
+            config.sortBagFromBottom = true;
+            config.save();
+            Log.info("背包整理按钮改为「相对面板底部」定位，位置已重置为自动贴底");
+        }
         int baseX = panelLeft() + ScreenBridge.imageWidth(screen);
-        int baseY = panelTop();
+        int baseY = baseY();
         if (kind == KIND_BAG && config.sortBagButtonDx == AUTO) {
-            setPos(baseX + 2, baseY + ScreenBridge.imageHeight(screen) - 20);
+            setPos(baseX + 2, baseY - 20);
             return;
         }
         int dx;
